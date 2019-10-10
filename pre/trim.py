@@ -10,7 +10,6 @@ def main(args):
     print('Processing', args.videofile, ', creating file', args.output)
     stream = ffmpeg.input(args.videofile)
 
-    reset_frame = True
     if args.start:
         if args.end:
             print('Shaving off first', args.start,
@@ -25,12 +24,10 @@ def main(args):
             stream = ffmpeg.trim(stream, end=args.end)
         else:
             print('Converting video file')
-            reset_frame = False
 
-    if reset_frame:
-        stream = ffmpeg.setpts(stream, 'PTS-STARTPTS')
+    stream = ffmpeg.setpts(stream, 'PTS-STARTPTS')
 
-    stream = ffmpeg.output(stream, args.output)
+    stream = ffmpeg.output(stream, args.output, **{'qscale': 0})
 
     ffmpeg.run(stream)
     print('Done.', args.output)
