@@ -4,7 +4,7 @@ Source code and more for Steffen Trog's bachelor thesis.
 
 ## Installation
 
-Clone the repo, e. g. using SSH:
+Clone the repo, e. g. using SSH, and execute:
 
 ```bash
 git@git.zs.informatik.uni-kiel.de:stu204766/bladestitching.git
@@ -14,6 +14,6 @@ pip install -r requirements.txt
 
 ## Directory structure
 
-| Dir   | What's in there       |
-|-------|-----------------------|
-| `pre` | Preprocessing scripts |
+| Directory | What's in there       |
+|-----------|-----------------------|
+| `pre`     | Preprocessing scripts |
