@@ -8,10 +8,12 @@ import ffmpeg
 def main(args):
 
     print('Extracting frames from', args.videofile, 'to directory', args.output)
-    stream = ffmpeg.input(args.videofile)
-    stream = ffmpeg.filter(stream, 'fps', fps=args.fps)
-    stream = ffmpeg.output(stream, os.path.join(args.output, 'frame-%06d.jpg'))
-    ffmpeg.run(stream)
+    (
+        ffmpeg.input(args.videofile)
+        .filter('fps', fps=args.fps)
+        .output(os.path.join(args.output, 'frame-%06d.jpg'))
+        .run()
+    )
     print('Done.', args.output)
 
 

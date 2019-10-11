@@ -25,11 +25,11 @@ def main(args):
         else:
             print('Converting video file')
 
-    stream = ffmpeg.setpts(stream, 'PTS-STARTPTS')
-
-    stream = ffmpeg.output(stream, args.output, **{'qscale': 0})
-
-    ffmpeg.run(stream)
+    (
+        ffmpeg.setpts(stream, 'PTS-STARTPTS')
+        .output(args.output, **{'qscale': 0})
+        .run()
+    )
     print('Done.', args.output)
 
 
