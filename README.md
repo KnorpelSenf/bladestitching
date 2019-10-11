@@ -2,6 +2,17 @@
 
 Source code and more for Steffen Trog's bachelor thesis.
 
+## About
+
+So far, this repo contains code that performs the following tasks:
+
+1) Preprocessing. This includes:
+    * Take AVI video files recorded by drones flying along rotor blades of wind engines as input,
+    * Trim the videos to the relevant parts, and
+    * Sample JPG images from the trimmed video at a given fps rate
+
+All code will be provided with at least a minimal documentation.
+
 ## Installation
 
 Clone the repo, e. g. using SSH, and execute:
