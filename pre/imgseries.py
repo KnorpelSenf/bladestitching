@@ -5,16 +5,16 @@ import os
 import ffmpeg
 
 
-def main(args):
+def imgseries(videofile, output, fps):
 
-    print('Extracting frames from', args.videofile, 'to directory', args.output)
+    print('Extracting frames from', videofile, 'to directory', output)
     (
-        ffmpeg.input(args.videofile)
-        .filter('fps', fps=args.fps)
-        .output(os.path.join(args.output, 'frame-%06d.jpg'))
+        ffmpeg.input(videofile)
+        .filter('fps', fps=fps)
+        .output(os.path.join(output, 'frame-%06d.jpg'))
         .run()
     )
-    print('Done.', args.output)
+    print('Done.', output)
 
 
 if __name__ == '__main__':
@@ -24,13 +24,10 @@ if __name__ == '__main__':
 
     parser.add_argument('videofile', help='Video file')
     parser.add_argument('-o', '--output', help='Output directory')
-    parser.add_argument(
-        '--fps', help='Frames extracted per second of video. Use 10 or 1/2 (default) or 0.3 or the like')
+    parser.add_argument('--fps', default='1/2',
+                        help='Frames extracted per second of video. Use 10 or 1/2 (default) or 0.3 or the like')
 
     args = parser.parse_args()
-
-    if not args.fps:
-        args.fps = '1/2'
 
     if not args.output:
         # split ext
@@ -41,4 +38,4 @@ if __name__ == '__main__':
 
     print(args)
 
-    main(args)
+    imgseries(args.videofile, args.output, args.fps)

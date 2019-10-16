@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-import os
 import ffmpeg
+import os
 
 
-def main(args):
+def trim(videofile, output, start, end):
 
-    print('Processing', args.videofile, ', creating file', args.output)
-    stream = ffmpeg.input(args.videofile)
+    print('Processing', videofile, ', creating file', output)
+    stream = ffmpeg.input(videofile)
 
-    if args.start:
-        if args.end:
-            print('Shaving off first', args.start,
-                  'and last', args.end, 'seconds')
-            stream = ffmpeg.trim(stream, start=args.start, end=args.end)
+    if start:
+        if end:
+            print('Shaving off first', start,
+                  'and last', end, 'seconds')
+            stream = ffmpeg.trim(stream, start=start, end=end)
         else:
-            print('Shaving off first', args.start, 'seconds')
-            stream = ffmpeg.trim(stream, start=args.start)
+            print('Shaving off first', start, 'seconds')
+            stream = ffmpeg.trim(stream, start=start)
     else:
-        if args.end:
-            print('Shaving off last', args.end, 'seconds')
-            stream = ffmpeg.trim(stream, end=args.end)
+        if end:
+            print('Shaving off last', end, 'seconds')
+            stream = ffmpeg.trim(stream, end=end)
         else:
             print('Converting video file')
 
     (
         ffmpeg.setpts(stream, 'PTS-STARTPTS')
-        .output(args.output, **{'qscale': 0})
+        .output(output, **{'qscale': 0})
         .run()
     )
-    print('Done.', args.output)
+    print('Done.', output)
 
 
 if __name__ == '__main__':
@@ -55,4 +55,4 @@ if __name__ == '__main__':
 
     print(args)
 
-    main(args)
+    trim(args.videofile, args.output, args.start, args.end)
