@@ -7,10 +7,10 @@ import os
 
 
 def crop(imagefile, output, north=0, east=0, south=0, west=0):
-    img = cv.imread(imagefile, cv.IMREAD_COLOR)
+    img = cv.imread(imagefile)
     cropped = img[north:-south-1, west:-east-1]
-    print('Cropped', imagefile, 'to',  os.path.abspath(output))
     cv.imwrite(output, cropped)
+    print('Cropped', imagefile, 'to',  os.path.abspath(output))
 
 
 def crop_all(imagedir, output, north=0, east=0, south=0, west=0):
