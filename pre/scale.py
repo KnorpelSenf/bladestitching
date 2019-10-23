@@ -11,7 +11,9 @@ def scale(imagefile, output, factor, interpolation=cv.INTER_LINEAR):
     img = cv.resize(img, None, fx=factor, fy=factor,
                     interpolation=interpolation)
     cv.imwrite(output, img)
-    print('Scaled', imagefile, 'to',  os.path.abspath(output))
+    print('Scaled', 'up' if factor > 1 else
+          'down' if factor < 1 else
+          'without change', imagefile, 'to',  os.path.abspath(output))
 
 
 def scale_all(imagedir, output, factor, interpolation=cv.INTER_LINEAR):
