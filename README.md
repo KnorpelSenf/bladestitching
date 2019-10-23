@@ -15,10 +15,10 @@ So far, this repo contains code that performs the following tasks:
 2) Feature detection. This includes:
     * Take an image (or a directory full of images) as input,
     * Detect and highlight features using Good Features to Track (GFTT), or
-    * Detect and hightlight features using Scale Invariant Feature Transform (SIFT)
+    * Detect and hightlight features using Scale Invariant Feature Transform (SIFT).
 3) Line detection. This includes:
     * Take an image (or a directory full of images) as input, and
-    * Detect and filter lines using a Hough transform
+    * Detect lines using a Hough transform.
 
 All code will be provided with at least a minimal documentation.
 
