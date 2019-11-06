@@ -76,7 +76,7 @@ class LineImage:
         """
         # TODO: find metric that works more generically, create clusters with two elements each
         print('Finding neighbors for', len(
-            self.lines), 'lines in', self.img_path, 'which are', [eq(*l) for l in self.lines])
+            self.lines), 'lines in', self.img_path)
         for line in self.lines:
             # print('Finding neighbor for', line, 'in', image.lines)
 
