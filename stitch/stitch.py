@@ -9,7 +9,7 @@ import numpy as np
 import linedetect.hough as ld
 
 
-def are_lines_similar(r, s, max_rho=20, max_theta=0.1):
+def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     rho_r, theta_r = r
     rho_s, theta_s = s
     diff_t = abs(theta_r - theta_s)
@@ -36,14 +36,32 @@ def stitch(imagedir):
     pairs = list(zip(line_files, line_files[1:]))
 
     for current_image, next_image in pairs:
+        img = cv.imread(current_image.img_path)
         current_image.init_twins(next_image)
-        current_image.draw_bisecting_lines()
+        lines = current_image.lines
+
+        for line in lines:
+            draw_line(img, *line, (0, 0, 255), width=1)
+
+        c = len(lines)
+        unique_combinations = [(lines[l], lines[r])
+                               for l in range(0, c)
+                               for r in range(l + 1, c)]
+
+        for l, r in unique_combinations:
+            b = get_bisecting_line(l, r)
+            draw_line(img, *b, (0, 0, 255), width=2)
+
+        p = os.path.join(imagedir, os.path.pardir, 'bisect',
+                         os.path.basename(current_image.img_path))
+        cv.imwrite(p, img)
 
 
 class LineImage:
     """
     LineImages contain an image path and a list of Hough lines with it.
-    Hough lines will automatically normalized upon instantiation (rho is positive).
+    Hough lines will automatically be normalized upon instantiation such
+    that rho and theta are positive and 0 <= theta < 2*pi holds true.
     """
 
     def __init__(self, img_path, lines=[]):
@@ -56,7 +74,9 @@ class LineImage:
         Takes an image and matches self.lines with image.lines to generate
         pairs of closest lines. Result will be stored in self.twins property.
         """
-        print('Finding neighbors for', len(self.lines), 'lines')
+        # TODO: find metric that works more generically, create clusters with two elements each
+        print('Finding neighbors for', len(
+            self.lines), 'lines in', self.img_path)
         for line in self.lines:
             # print('Finding neighbor for', line, 'in', image.lines)
             neighbors = list(
@@ -66,11 +86,12 @@ class LineImage:
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
                     print('WARNING: Ignoring second similar line(s)!',
-                          neighbors[1:])
+                          [eq(*l) for l in neighbors[1:]])
                 self.twins.append(neighbors[0])
             else:
+                print('WARNING: Line cannot be found in next image!',
+                      eq(*line), [eq(*l)for l in image.lines])
                 self.twins.append(None)
-                print('Not enough lines considered similar!')
 
     def __str__(self):
         return str(self.img_path) + ' has lines ' + str(
