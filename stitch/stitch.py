@@ -60,13 +60,13 @@ def stitch(imagedir):
 class LineImage:
     """
     LineImages contain an image path and a list of Hough lines with it.
-    Hough lines will automatically be normalized upon instantiation such
-    that rho and theta are positive and 0 <= theta < 2*pi holds true.
+    Hough lines will automatically be normalized upon instantiation
+    as specified by normalize(line).
     """
 
     def __init__(self, img_path, lines=[]):
         self.img_path = img_path
-        self.lines = [(r, t) if r > 0 else (-r, np.pi + t) for r, t in lines]
+        self.lines = [normalize(l) for l in lines]
         self.twins = []
 
     def init_twins(self, image):
@@ -76,21 +76,30 @@ class LineImage:
         """
         # TODO: find metric that works more generically, create clusters with two elements each
         print('Finding neighbors for', len(
-            self.lines), 'lines in', self.img_path)
+            self.lines), 'lines in', self.img_path, 'which are', [eq(*l) for l in self.lines])
         for line in self.lines:
             # print('Finding neighbor for', line, 'in', image.lines)
+
+            # Take lines that are similar and sort them by rho distance
             neighbors = list(
-                filter(lambda l: are_lines_similar(l, line), image.lines))
+                sorted(
+                    filter(
+                        lambda l: are_lines_similar(l, line),
+                        image.lines
+                    ),
+                    key=lambda l: l[0] - line[0]
+                )
+            )
             # print(line, 'has', len(neighbors),
             #       'neighbors, they are:', neighbors)
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
-                    print('WARNING: Ignoring second similar line(s)!',
+                    print('WARNING: Ignoring other similar line(s)!',
                           [eq(*l) for l in neighbors[1:]])
                 self.twins.append(neighbors[0])
             else:
                 print('WARNING: Line cannot be found in next image!',
-                      eq(*line), [eq(*l)for l in image.lines])
+                      eq(*line))
                 self.twins.append(None)
 
     def __str__(self):
@@ -147,6 +156,20 @@ def get_bisecting_line(l, r):
     rho = np.sqrt(x * x + y * y)
 
     return rho, theta
+
+
+def normalize(line):
+    """
+    Normalizes a line such that rho is positive and -pi <= theta < pi holds true.
+    """
+    r, t = line
+    if r < 0:
+        r, t = -r, np.pi + t
+    while t < -np.pi:
+        t += 2 * np.pi
+    while t >= np.pi:
+        t -= 2 * np.pi
+    return r, t
 
 
 def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
