@@ -16,11 +16,6 @@ def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     similar = abs(rho_r - rho_s) < max_rho and diff_t < max_theta
     similar_inverted = abs(
         rho_r + rho_s) < max_rho and abs(diff_t - np.pi) < max_theta
-    # if similar:
-    #     print(abs(rho_r - rho_s), '<', max_rho, 'and', diff_t, '<', max_theta)
-    # if similar_inverted:
-    #     print(abs(rho_r + rho_s), '<', max_rho, 'and',
-    #           abs(diff_t - np.pi), '<', max_theta)
     return similar or similar_inverted
 
 
@@ -37,24 +32,158 @@ def stitch(imagedir):
 
     for current_image, next_image in pairs:
         img = cv.imread(current_image.img_path)
+
         current_image.init_twins(next_image)
-        lines = current_image.lines
 
-        for line in lines:
-            draw_line(img, *line, (0, 0, 255), width=1)
+        c_lines = current_image.lines
+        n_lines = [current_image.twins[line]
+                   if line in current_image.twins
+                   else None
+                   for line in c_lines]
 
-        c = len(lines)
-        unique_combinations = [(lines[l], lines[r])
-                               for l in range(0, c)
-                               for r in range(l + 1, c)]
+        for c in c_lines:
+            draw_line(img, *c, (0, 0, 255), width=1)
+        for n in n_lines:
+            if n is not None:
+                draw_line(img, *n, (255, 0, 0), width=1)
 
-        for l, r in unique_combinations:
-            b = get_bisecting_line(l, r)
-            draw_line(img, *b, (0, 0, 255), width=2)
+        line_pairs = list(
+            filter(
+                lambda p: p[1] is not None,
+                zip(c_lines,
+                    n_lines)
+            )
+        )
+
+        count = len(line_pairs)
+        twins = [(line_pairs[l], line_pairs[r])
+                 for l in range(0, count)
+                 for r in range(l + 1, count)]
+        print('Aligning according to', len(twins), 'pairs of matched lines')
+
+        # Naming conventions:
+        # Prefix c_ stands for C_urrent set of lines
+        # Prefix n_ stands for N_ext set of lines
+        # Postfix _l stands for _Left line
+        # Postfix _b stands for _Bisection line
+        # Postfix _r stands for _Right line
+        # x means x coord, y means y coord of base point
+        # rho, theta are simply x, y in polar coords
+        for (c_l, n_l), (c_r, n_r) in twins:
+
+            c_rho_l, c_theta_l = c_l
+            c_rho_b, c_theta_b = get_bisecting_line(c_l, c_r)
+            c_rho_r, c_theta_r = c_r
+
+            n_rho_l, n_theta_l = n_l
+            n_rho_b, n_theta_b = get_bisecting_line(n_l, n_r)
+            n_rho_r, n_theta_r = n_r
+
+            c_x_l, c_y_l = (c_rho_l * np.cos(c_theta_l),
+                            c_rho_l * np.sin(c_theta_l))
+            c_x_b, c_y_b = (c_rho_b * np.cos(c_theta_b),
+                            c_rho_b * np.sin(c_theta_b))
+            c_x_r, c_y_r = (c_rho_r * np.cos(c_theta_r),
+                            c_rho_r * np.sin(c_theta_r))
+
+            n_x_l, n_y_l = (n_rho_l * np.cos(n_theta_l),
+                            n_rho_l * np.sin(n_theta_l))
+            n_x_b, n_y_b = (n_rho_b * np.cos(n_theta_b),
+                            n_rho_b * np.sin(n_theta_b))
+            n_x_r, n_y_r = (n_rho_r * np.cos(n_theta_r),
+                            n_rho_r * np.sin(n_theta_r))
+
+            print(c_theta_l, c_theta_b, c_theta_r)
+
+            translate_x_l = None
+            translate_y_l = None
+
+            translate_x_r = None
+            translate_y_r = None
+
+            # TODO: rotate everything according to c_b and n_b
+            # in order to avoid /0 error here
+
+            # TODO: take average over multiple images?
+
+            if not abs(c_theta_l) < 1e-5:
+                x_diff_l = (n_x_l - c_x_l
+                            + n_x_b - c_x_b)
+                y_diff_l = (n_y_l - c_y_l
+                            + n_y_b - c_y_b)
+
+                theta_diff_l = (0.5 * np.pi
+                                - c_theta_l
+                                - np.arctan(y_diff_l
+                                            / x_diff_l))
+
+                bottom_len_l = np.sqrt(x_diff_l * x_diff_l
+                                       + y_diff_l * y_diff_l)
+                up_len_l = (bottom_len_l
+                            * np.sin(theta_diff_l)
+                            / np.sin(c_theta_l))
+
+                translate_x_l = x_diff_l
+                translate_y_l = y_diff_l + up_len_l
+                print('====L>>>', translate_x_l, translate_y_l)
+                cv.line(img,
+                        (100, 400),
+                        (int(100+translate_x_l), int(400 + translate_y_l)),
+                        (0, 0, 0),
+                        thickness=1)
+
+            if not abs(c_theta_r) < 1e-5:
+                x_diff_r = (n_x_r - c_x_r
+                            + n_x_b - c_x_b)
+                y_diff_r = (n_y_r - c_y_r
+                            + n_y_b - c_y_b)
+
+                theta_diff_r = (0.5 * np.pi
+                                - c_theta_r
+                                - np.arctan(y_diff_r
+                                            / x_diff_r))
+
+                bottom_len_r = np.sqrt(x_diff_r * x_diff_r
+                                       + y_diff_r * y_diff_r)
+                up_len_r = (bottom_len_r
+                            * np.sin(theta_diff_r)
+                            / np.sin(c_theta_r))
+
+                translate_x_r = x_diff_r
+                translate_y_r = y_diff_r + up_len_r
+                print('====R>>>', translate_x_r, translate_y_r)
+                cv.line(img,
+                        (300, 400),
+                        (int(300+translate_x_r), int(400 + translate_y_r)),
+                        (0, 0, 0),
+                        thickness=1)
+            else:
+                translate_x_r = translate_x_l
+                translate_y_r = translate_y_l
+
+            if translate_x_l is None:
+                translate_x_l = translate_x_r
+                translate_y_l = translate_y_r
+
+            if translate_x_l is not None:
+                translate_x = int(0.5 * (translate_x_l + translate_x_r))
+                translate_y = int(0.5 * (translate_y_l + translate_y_r))
+                cv.line(img,
+                        (200, 400),
+                        (200+translate_x, 400 + translate_y),
+                        (0, 0, 0),
+                        thickness=3)
+
+                cv.line(img,
+                        (-1, 480 + translate_y),
+                        (10000, 480 + translate_y),
+                        (0, 0, 0),
+                        thickness=1)
 
         p = os.path.join(imagedir, os.path.pardir, 'bisect',
                          os.path.basename(current_image.img_path))
         cv.imwrite(p, img)
+        print('################ DONE IMAGE')
 
 
 class LineImage:
@@ -67,7 +196,7 @@ class LineImage:
     def __init__(self, img_path, lines=[]):
         self.img_path = img_path
         self.lines = [normalize(l) for l in lines]
-        self.twins = []
+        self.twins = {}
 
     def init_twins(self, image):
         """
@@ -90,17 +219,14 @@ class LineImage:
                     key=lambda l: l[0] - line[0]
                 )
             )
-            # print(line, 'has', len(neighbors),
-            #       'neighbors, they are:', neighbors)
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
                     print('WARNING: Ignoring other similar line(s)!',
                           [eq(*l) for l in neighbors[1:]])
-                self.twins.append(neighbors[0])
+                self.twins[line] = neighbors[0]
             else:
                 print('WARNING: Line cannot be found in next image!',
                       eq(*line))
-                self.twins.append(None)
 
     def __str__(self):
         return str(self.img_path) + ' has lines ' + str(
