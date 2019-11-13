@@ -7,30 +7,27 @@ import cv2 as cv
 import numpy as np
 
 import linedetect.hough as ld
+import linedetect.lineutils as ut
 
 
-def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
-    rho_r, theta_r = r
-    rho_s, theta_s = s
-    diff_t = abs(theta_r - theta_s)
-    similar = abs(rho_r - rho_s) < max_rho and diff_t < max_theta
-    similar_inverted = abs(
-        rho_r + rho_s) < max_rho and abs(diff_t - np.pi) < max_theta
-    return similar or similar_inverted
-
-
-def stitch(imagedir):
+def stitch(imagedir, center=True):
     files = sorted(os.listdir(imagedir))
     file_paths = [os.path.join(imagedir, file) for file in files]
     lines_per_image = [ld.hough(file_path,
-                                None,
-                                ld.naiveNub,
-                                lambda l: ld.naiveFilter(l, 0.5))
+                                nubPredicate=None
+                                if center
+                                else ld.naiveNubPredicate,
+                                center=center,
+                                filterPredicate=lambda l: ld.naiveFilter(
+                                    l, 0.5),
+                                paint=False)
                        for file_path in file_paths]
     line_files = [LineImage(p, l) for p, l in zip(file_paths, lines_per_image)]
     pairs = list(zip(line_files, line_files[1:]))
 
     for current_image, next_image in pairs:
+        print(current_image.img_path, '-->', next_image.img_path)
+
         img = cv.imread(current_image.img_path)
 
         current_image.init_twins(next_image)
@@ -41,11 +38,11 @@ def stitch(imagedir):
                    else None
                    for line in c_lines]
 
-        for c in c_lines:
-            draw_line(img, *c, (0, 0, 255), width=1)
-        for n in n_lines:
-            if n is not None:
-                draw_line(img, *n, (255, 0, 0), width=1)
+        # for c in c_lines:
+        #     draw_line(img, *c, (0, 0, 255), width=1)
+        # for n in n_lines:
+        #     if n is not None:
+        #         draw_line(img, *n, (255, 0, 0), width=1)
 
         line_pairs = list(
             filter(
@@ -59,7 +56,9 @@ def stitch(imagedir):
         twins = [(line_pairs[l], line_pairs[r])
                  for l in range(0, count)
                  for r in range(l + 1, count)]
-        print('Aligning according to', len(twins), 'pairs of matched lines')
+        # print('Aligning according to', len(twins), 'pairs of matched lines')
+
+        translations = []
 
         # Naming conventions:
         # Prefix c_ stands for C_urrent set of lines
@@ -67,7 +66,7 @@ def stitch(imagedir):
         # Postfix _l stands for _Left line
         # Postfix _b stands for _Bisection line
         # Postfix _r stands for _Right line
-        # x means x coord, y means y coord of base point
+        # x means x coord, y means y coord of foot point
         # rho, theta are simply x, y in polar coords
         for (c_l, n_l), (c_r, n_r) in twins:
 
@@ -93,7 +92,7 @@ def stitch(imagedir):
             n_x_r, n_y_r = (n_rho_r * np.cos(n_theta_r),
                             n_rho_r * np.sin(n_theta_r))
 
-            print(c_theta_l, c_theta_b, c_theta_r)
+            # print(c_theta_l, c_theta_b, c_theta_r)
 
             translate_x_l = None
             translate_y_l = None
@@ -125,12 +124,12 @@ def stitch(imagedir):
 
                 translate_x_l = x_diff_l
                 translate_y_l = y_diff_l + up_len_l
-                print('====L>>>', translate_x_l, translate_y_l)
-                cv.line(img,
-                        (100, 400),
-                        (int(100+translate_x_l), int(400 + translate_y_l)),
-                        (0, 0, 0),
-                        thickness=1)
+                # print('====L>>>', translate_x_l, translate_y_l)
+                # cv.line(img,
+                #         (100, 400),
+                #         (int(100+translate_x_l), int(400 + translate_y_l)),
+                #         (0, 0, 0),
+                #         thickness=1)
 
             if not abs(c_theta_r) < 1e-5:
                 x_diff_r = (n_x_r - c_x_r
@@ -151,12 +150,12 @@ def stitch(imagedir):
 
                 translate_x_r = x_diff_r
                 translate_y_r = y_diff_r + up_len_r
-                print('====R>>>', translate_x_r, translate_y_r)
-                cv.line(img,
-                        (300, 400),
-                        (int(300+translate_x_r), int(400 + translate_y_r)),
-                        (0, 0, 0),
-                        thickness=1)
+                # print('====R>>>', translate_x_r, translate_y_r)
+                # cv.line(img,
+                #         (300, 400),
+                #         (int(300+translate_x_r), int(400 + translate_y_r)),
+                #         (0, 0, 0),
+                #         thickness=1)
             else:
                 translate_x_r = translate_x_l
                 translate_y_r = translate_y_l
@@ -168,34 +167,38 @@ def stitch(imagedir):
             if translate_x_l is not None:
                 translate_x = int(0.5 * (translate_x_l + translate_x_r))
                 translate_y = int(0.5 * (translate_y_l + translate_y_r))
-                cv.line(img,
-                        (200, 400),
-                        (200+translate_x, 400 + translate_y),
-                        (0, 0, 0),
-                        thickness=3)
+                translations.append([translate_x, translate_y])
+                # cv.line(img,
+                #         (200, 400),
+                #         (200 + translate_x, 400 + translate_y),
+                #         (0, 0, 0),
+                #         thickness=3)
 
-                cv.line(img,
-                        (-1, 480 + translate_y),
-                        (10000, 480 + translate_y),
-                        (0, 0, 0),
-                        thickness=1)
+                # cv.line(img,
+                #         (-1, 480 + translate_y),
+                #         (10000, 480 + translate_y),
+                #         (0, 0, 0),
+                #         thickness=1)
 
-        p = os.path.join(imagedir, os.path.pardir, 'bisect',
+        if len(translations) > 0:
+            translation = np.array(translations).mean(0)
+            print('Moved by', translation)
+        p = os.path.join(imagedir, os.path.pardir, 'stitch-c' if center else 'stitch-n',
                          os.path.basename(current_image.img_path))
         cv.imwrite(p, img)
-        print('################ DONE IMAGE')
+        print()
 
 
 class LineImage:
     """
     LineImages contain an image path and a list of Hough lines with it.
     Hough lines will automatically be normalized upon instantiation
-    as specified by normalize(line).
+    as specified by linedetect.lineutils.normalize(line).
     """
 
     def __init__(self, img_path, lines=[]):
         self.img_path = img_path
-        self.lines = [normalize(l) for l in lines]
+        self.lines = [ut.normalize(l) for l in lines]
         self.twins = {}
 
     def init_twins(self, image):
@@ -204,8 +207,8 @@ class LineImage:
         pairs of closest lines. Result will be stored in self.twins property.
         """
         # TODO: find metric that works more generically, create clusters with two elements each
-        print('Finding neighbors for', len(
-            self.lines), 'lines in', self.img_path)
+        # print('Finding neighbors for', len(
+        #     self.lines), 'lines in', self.img_path)
         for line in self.lines:
             # print('Finding neighbor for', line, 'in', image.lines)
 
@@ -213,7 +216,7 @@ class LineImage:
             neighbors = list(
                 sorted(
                     filter(
-                        lambda l: are_lines_similar(l, line),
+                        lambda l: ld.ut.are_lines_similar(l, line),
                         image.lines
                     ),
                     key=lambda l: l[0] - line[0]
@@ -222,11 +225,11 @@ class LineImage:
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
                     print('WARNING: Ignoring other similar line(s)!',
-                          [eq(*l) for l in neighbors[1:]])
+                          [ut.eq(*l) for l in neighbors[1:]])
                 self.twins[line] = neighbors[0]
             else:
                 print('WARNING: Line cannot be found in next image!',
-                      eq(*line))
+                      ut.eq(*line))
 
     def __str__(self):
         return str(self.img_path) + ' has lines ' + str(
@@ -247,18 +250,18 @@ def get_bisecting_line(l, r):
     # direction of bisecting line
     theta = 0.5 * (theta_l + theta_r)
 
-    # coordinates of base point of l (and r, respectively)
+    # coordinates of foot point of l (and r, respectively)
     # (from origin move by rho_l in the direction of theta_l)
     x_l, y_l = (rho_l * np.cos(theta_l), rho_l * np.sin(theta_l))
     x_r, y_r = (rho_r * np.cos(theta_r), rho_r * np.sin(theta_r))
 
-    # move in this direction from base point of l (and r respectively)
+    # move in this direction from foot point of l (and r respectively)
     # to get to the point where the supporting vector of the bisecting
     # line intersects l (and r respectively)
     alpha_l = 0.5 * np.pi + theta_l
     alpha_r = 0.5 * np.pi + theta_r
 
-    # move by this number of pixels from base point of l (and r respectively)
+    # move by this number of pixels from foot point of l (and r respectively)
     # to get to the point where the supporting vector of the bisecting
     # line intersects l (and r respectively)
     intersect_l = np.tan(theta - theta_l) * rho_l
@@ -284,37 +287,18 @@ def get_bisecting_line(l, r):
     return rho, theta
 
 
-def normalize(line):
-    """
-    Normalizes a line such that rho is positive and -pi <= theta < pi holds true.
-    """
-    r, t = line
-    if r < 0:
-        r, t = -r, np.pi + t
-    while t < -np.pi:
-        t += 2 * np.pi
-    while t >= np.pi:
-        t -= 2 * np.pi
-    return r, t
+# def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
+#     a = np.cos(theta)
+#     b = np.sin(theta)
+#     x0 = a * rho
+#     y0 = b * rho
+#     x1 = int(x0 + b * -1000)
+#     y1 = int(y0 + a * 1000)
+#     x2 = int(x0 - b * -1000)
+#     y2 = int(y0 - a * 1000)
 
-
-def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + b * -1000)
-    y1 = int(y0 + a * 1000)
-    x2 = int(x0 - b * -1000)
-    y2 = int(y0 - a * 1000)
-
-    cv.line(img, (x1, y1), (x2, y2), color, width)
-
-
-def eq(rho, theta):
-    r = str(rho)
-    t = str(theta)
-    return r + ' = x * sin( ' + t + ' ) + y * cos( ' + t + ' )'
+#     print('PPPPPPPPPPPP')
+#     cv.line(img, (x1, y1), (x2, y2), color, width)
 
 
 if __name__ == '__main__':
@@ -323,7 +307,9 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('input', help='Image directory')
+    parser.add_argument('strategy', choices=['nub', 'center'],
+                        help='Decide whether adjacent lines should be discarded or joined')
 
     args = parser.parse_args()
 
-    stitch(args.input)
+    stitch(args.input, center=True if args.strategy == 'center' else False)

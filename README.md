@@ -54,12 +54,14 @@ This behavior is useful once the images were sampled from a video.
 
 Assume you want to shave off the start and the end of a video and only keep the interval between seconds 42 and 1729.
 Trim the video using:
+
 ```bash
 # Virtual environment if you did not set it already
 source venv/bin/activate
 # Script to trim video
 ./pre/trim.py <input> --output <output> --start 42 --end 1729
 ```
+
 Use `-o`, `-s` and `-e` as abbreviations for `--output`, `--start` and `--end`, respectively.
 
 Any argument (except `input`) can be omitted entirely.
@@ -86,3 +88,10 @@ Use `featuredetect/gftt.py` and `featuredetect/sift.py` to find features with Go
 ## Line detection tasks
 
 Use `linedetect/hough.py` to detect Hough lines.
+
+## Image stitching
+
+Image stitching will be performed solely on detected Hough lines, making feature detection obsolete.
+
+* Distances d1...dn of lines at known points (offset from image border)
+* d1...dn will occur at similar points in next image, compute average movement
