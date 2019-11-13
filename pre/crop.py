@@ -14,7 +14,7 @@ def crop(imagefile, output, north=0, east=0, south=0, west=0):
 
 
 def crop_all(imagedir, output, north=0, east=0, south=0, west=0):
-    for file in os.listdir(imagedir):
+    for file in sorted(os.listdir(imagedir)):
         imagefile = os.path.join(imagedir, file)
         outputfile = os.path.join(output, file)
         crop(imagefile, outputfile, north, east, south, west)

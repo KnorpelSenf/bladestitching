@@ -20,7 +20,7 @@ def gftt(imagefile, output, featurecount=25, minquality=0.01, mindist=10):
 
 
 def gftt_all(imagedir, output, featurecount=25, minquality=0.01, mindist=10):
-    for file in os.listdir(imagedir):
+    for file in sorted(os.listdir(imagedir)):
         imagefile = os.path.join(imagedir, file)
         outputfile = os.path.join(output, file)
         gftt(imagefile, outputfile, featurecount, minquality, mindist)

@@ -24,7 +24,7 @@ def sift(imagefile, output,
 
 def sift_all(imagedir, output,
              featurecount=25, contrastThreshold=0.04, edgeThreshold=10, rich=False):
-    for file in os.listdir(imagedir):
+    for file in sorted(os.listdir(imagedir)):
         imagefile = os.path.join(imagedir, file)
         outputfile = os.path.join(output, file)
         sift(imagefile, outputfile,

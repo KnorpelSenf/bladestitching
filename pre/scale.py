@@ -17,7 +17,7 @@ def scale(imagefile, output, factor, interpolation=cv.INTER_LINEAR):
 
 
 def scale_all(imagedir, output, factor, interpolation=cv.INTER_LINEAR):
-    for file in os.listdir(imagedir):
+    for file in sorted(os.listdir(imagedir)):
         imagefile = os.path.join(imagedir, file)
         outputfile = os.path.join(output, file)
         scale(imagefile, outputfile, factor, interpolation=interpolation)
