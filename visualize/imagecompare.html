@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/vue-twentytwenty/dist/vue-twentytwenty.css" />
+</head>
+
+<body>
+    <div id="app">
+        <h1>
+            Resource path:
+        </h1>
+        <textarea v-model="source_path" type="text"
+            placeholder="Paths of source images to compare. Paste the content of a bash `find $PWD` here."
+            rows="10" cols="100">
+    </textarea><br>
+        <div v-if="!this.images.length">
+            Please put your images in the above text area.
+        </div>
+        <div v-else>
+            <h1>
+                Images:
+            </h1>
+            <div v-for="img in this.images">
+                <h3>{{ img.title }} → {{ img.next_title }}</h1>
+                    <TwentyTwenty :before="img.path" :after="img.next_path" />
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-twentytwenty/dist/vue-twentytwenty.js"></script>
+    <script>
+        function getBaseName(s) {
+            return s === undefined ? undefined : s.split(/\//).pop();
+        }
+        new Vue({
+            el: '#app',
+            data: () => {
+                return {
+                    source_path: '/home/'
+                }
+            },
+            computed: {
+                paths() {
+                    return this.source_path.split(/\s/).filter(s => !!s.trim());
+                },
+                images() {
+                    const allPathsButTheLast = [...this.paths];
+                    allPathsButTheLast.pop();
+                    return allPathsButTheLast.map((p, i) => {
+                        const n = this.paths[i + 1];
+                        return {
+                            path: p,
+                            next_path: n,
+
+                            title: getBaseName(p),
+                            next_title: getBaseName(n),
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
