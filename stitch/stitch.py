@@ -168,8 +168,8 @@ def stitch(imagedir, output=None, center=True):
                 translate_y_l = translate_y_r
 
             if translate_x_l is not None:
-                translate_x = int(0.5 * (translate_x_l + translate_x_r))
-                translate_y = int(0.5 * (translate_y_l + translate_y_r))
+                translate_x = 0.5 * (translate_x_l + translate_x_r)
+                translate_y = 0.5 * (translate_y_l + translate_y_r)
                 image_translations.append([translate_x, translate_y])
                 # cv.line(img,
                 #         (200, 400),
@@ -184,7 +184,7 @@ def stitch(imagedir, output=None, center=True):
                 #         thickness=1)
 
         if len(image_translations) > 0:
-            translation = np.array(image_translations).mean(0)
+            translation = np.array(image_translations).mean(0).astype(int)
             key = os.path.basename(current_image.img_path)
             translations[key] = translation
             print('Moved by', translation)
