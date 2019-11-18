@@ -105,8 +105,9 @@ def hough(imagefile, output=None,
         print('WARNING: number of lines is merely',
               len(res), 'in image file', imagefile)
 
-    print('Applied Hough transform from', imagefile,
-          'to ' + output if output is not None else '')
+    if verbose:
+        print('Applied Hough transform from', imagefile,
+              'to ' + output if output is not None else '')
     return res
 
 
