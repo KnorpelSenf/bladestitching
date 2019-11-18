@@ -11,8 +11,8 @@
             Resource path:
         </h1>
         <textarea v-model="source_path" type="text"
-            placeholder="Paths of source images to compare. Paste the content of a bash `find $PWD` here."
-            rows="10" cols="100">
+            placeholder="Paths of source images to compare. Paste the content of a bash `find $PWD` here." rows="10"
+            cols="100">
     </textarea><br>
         <div v-if="!this.images.length">
             Please put your images in the above text area.
@@ -35,7 +35,7 @@
         }
         new Vue({
             el: '#app',
-            data: () => {
+            data: function () {
                 return {
                     source_path: ''
                 }
