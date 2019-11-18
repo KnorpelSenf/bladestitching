@@ -18,7 +18,7 @@
                     Original images:
                 </h2>
                 <textarea v-model="source_path_original" type="text"
-                    placeholder="Paths of source images. Paste the content of a bash `find $PWD` inside your directory with original images here."
+                    placeholder="Paths of source images. Paste the content of the above command inside your directory with original images here."
                     rows="10" style="width: 90%"></textarea>
             </div>
             <div class="item">
@@ -26,7 +26,7 @@
                     Padded images:
                 </h2>
                 <textarea v-model="source_path_padded" type="text"
-                    placeholder="Paths of source images. Paste the content of a bash `find $PWD` inside your directory with padded images here."
+                    placeholder="Paths of source images. Paste the content of the above command inside your directory with padded images here."
                     rows="10" style="width: 90%"></textarea>
             </div>
         </div>
@@ -91,8 +91,8 @@
                     return op.map((x, i) => [x, pp[i]])
                         .map(([o, p]) => {
                             return {
-                                path: o,
-                                next_path: p,
+                                path: o + '?t=' + new Date().getMilliseconds(),
+                                next_path: p + '?t=' + new Date().getMilliseconds(),
 
                                 title: getBaseName(o),
                                 next_title: getBaseName(p)
