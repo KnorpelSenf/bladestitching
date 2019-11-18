@@ -61,9 +61,8 @@ def findCenters(lines):
 
 
 def hough(imagefile, output=None,
-          nubPredicate=None,
           filterPredicate=None,
-          center=False,
+          nubPredicate=None, center=False,
           normalize=True,
           verbose=False,
           paint=True):
@@ -88,7 +87,7 @@ def hough(imagefile, output=None,
                 if verbose:
                     print('Line', str(len(res)) + ':',
                           rho, '= x * sin(', theta, ') + y * cos(', theta, ')')
-                if output is not None and paint:
+                if paint:
                     a = np.cos(theta)
                     b = np.sin(theta)
                     x0 = a*rho
@@ -98,13 +97,10 @@ def hough(imagefile, output=None,
                     x2 = int(x0 - 1000*(-b))
                     y2 = int(y0 - 1000*(a))
 
-                    print('AAAAAAAAAAAAAAARFG')
-                    exit(1)
-                    #cv.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    cv.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-    # if output is not None:
-    #     print('WRINTASDFASDGQDFG')
-    #     cv.imwrite(output, img)
+    if output is not None:
+        cv.imwrite(output, img)
     if len(res) < 2:
         print('WARNING: number of lines is merely',
               len(res), 'in image file', imagefile)
