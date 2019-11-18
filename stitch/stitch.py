@@ -5,12 +5,13 @@ import os
 
 import cv2 as cv
 import numpy as np
+import pandas as pd
 
 import linedetect.hough as ld
 import linedetect.lineutils as ut
 
 
-def stitch(imagedir, center=True):
+def stitch(imagedir, output=None, center=True):
     files = sorted(os.listdir(imagedir))
     file_paths = [os.path.join(imagedir, file) for file in files]
     lines_per_image = [ld.hough(file_path,
@@ -24,6 +25,8 @@ def stitch(imagedir, center=True):
                        for file_path in file_paths]
     line_files = [LineImage(p, l) for p, l in zip(file_paths, lines_per_image)]
     pairs = list(zip(line_files, line_files[1:]))
+
+    translations = {}
 
     for current_image, next_image in pairs:
         print(current_image.img_path, '-->', next_image.img_path)
@@ -58,7 +61,7 @@ def stitch(imagedir, center=True):
                  for r in range(l + 1, count)]
         # print('Aligning according to', len(twins), 'pairs of matched lines')
 
-        translations = []
+        image_translations = []
 
         # Naming conventions:
         # Prefix c_ stands for C_urrent set of lines
@@ -167,7 +170,7 @@ def stitch(imagedir, center=True):
             if translate_x_l is not None:
                 translate_x = int(0.5 * (translate_x_l + translate_x_r))
                 translate_y = int(0.5 * (translate_y_l + translate_y_r))
-                translations.append([translate_x, translate_y])
+                image_translations.append([translate_x, translate_y])
                 # cv.line(img,
                 #         (200, 400),
                 #         (200 + translate_x, 400 + translate_y),
@@ -180,13 +183,25 @@ def stitch(imagedir, center=True):
                 #         (0, 0, 0),
                 #         thickness=1)
 
-        if len(translations) > 0:
-            translation = np.array(translations).mean(0)
+        if len(image_translations) > 0:
+            translation = np.array(image_translations).mean(0)
+            key = os.path.basename(current_image.img_path)
+            translations[key] = translation
             print('Moved by', translation)
         p = os.path.join(imagedir, os.path.pardir, 'stitch-c' if center else 'stitch-n',
                          os.path.basename(current_image.img_path))
         cv.imwrite(p, img)
         print()
+
+    if output is not None:
+        paths = list(sorted(translations.keys()))
+        xs = [translations[p][0] for p in paths]
+        ys = [translations[p][1] for p in paths]
+        df = pd.DataFrame({'x': xs, 'y': ys}, index=paths)
+        print('#####')
+        print(df)
+        print('#####')
+        df.to_csv(output)
 
 
 class LineImage:
@@ -245,7 +260,6 @@ class LineImage:
 #     x2 = int(x0 - b * -1000)
 #     y2 = int(y0 - a * 1000)
 
-#     print('PPPPPPPPPPPP')
 #     cv.line(img, (x1, y1), (x2, y2), color, width)
 
 
@@ -257,7 +271,8 @@ if __name__ == '__main__':
     parser.add_argument('input', help='Image directory')
     parser.add_argument('strategy', choices=['nub', 'center'],
                         help='Decide whether adjacent lines should be discarded or joined')
+    parser.add_argument('-o', '--output', help='Output file')
 
     args = parser.parse_args()
 
-    stitch(args.input, center=True if args.strategy == 'center' else False)
+    stitch(args.input, output=args.output, center=args.strategy == 'center')
