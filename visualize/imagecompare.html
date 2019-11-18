@@ -31,13 +31,13 @@
     <script src="https://unpkg.com/vue-twentytwenty/dist/vue-twentytwenty.js"></script>
     <script>
         function getBaseName(s) {
-            return s === undefined ? undefined : s.split(/\//).pop();
+            return !!s ? undefined : s.split(/\//).pop();
         }
         new Vue({
             el: '#app',
             data: () => {
                 return {
-                    source_path: '/home/'
+                    source_path: ''
                 }
             },
             computed: {
