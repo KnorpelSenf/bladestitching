@@ -6,6 +6,7 @@ import os
 import cv2 as cv
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 import linedetect.hough as ld
 import linedetect.lineutils as ut
@@ -14,6 +15,7 @@ import linedetect.lineutils as ut
 def stitch(imagedir, output=None, center=True):
     files = sorted(os.listdir(imagedir))
     file_paths = [os.path.join(imagedir, file) for file in files]
+    print('Applying Hough transformations to input images ...')
     lines_per_image = [ld.hough(file_path,
                                 nubPredicate=None
                                 if center
@@ -22,15 +24,13 @@ def stitch(imagedir, output=None, center=True):
                                 filterPredicate=lambda l: ld.naiveFilter(
                                     l, 0.5),
                                 paint=False)
-                       for file_path in file_paths]
+                       for file_path in tqdm(file_paths)]
     line_files = [LineImage(p, l) for p, l in zip(file_paths, lines_per_image)]
     pairs = list(zip(line_files, line_files[1:]))
 
     translations = {}
 
     for current_image, next_image in pairs:
-        print(current_image.img_path, '-->', next_image.img_path)
-
         img = cv.imread(current_image.img_path)
 
         current_image.init_twins(next_image)
@@ -187,11 +187,11 @@ def stitch(imagedir, output=None, center=True):
             translation = np.array(image_translations).mean(0).astype(int)
             key = os.path.basename(current_image.img_path)
             translations[key] = translation
-            print('Moved by', translation)
+            print(current_image.img_path, '-->',
+                  next_image.img_path, ':: moved by', translation)
         p = os.path.join(imagedir, os.path.pardir, 'stitch-c' if center else 'stitch-n',
                          os.path.basename(current_image.img_path))
         cv.imwrite(p, img)
-        print()
 
     if output is not None:
         paths = list(sorted(translations.keys()))
