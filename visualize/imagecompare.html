@@ -61,8 +61,8 @@
             </h2>
             <button tabindex="-1" v-on:click="reloadImages()">Refresh</button>
             <div v-for="img in this.images">
-                <h3>{{ img.title }} → {{ img.next_title }}</h1>
-                    <TwentyTwenty :before="img.path" :after="img.next_path" />
+                <h3>{{ img.title }} → {{ img.next_title }}</h3>
+                <TwentyTwenty :before="img.path" :after="img.next_path" />
             </div>
         </div>
     </div>

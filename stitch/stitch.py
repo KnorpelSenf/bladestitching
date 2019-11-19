@@ -23,7 +23,11 @@ def stitch(imagedir, output=None, center=True):
                                 center=center,
                                 filterPredicate=lambda l: ld.naiveFilter(
                                     l, 0.5),
-                                paint=False)
+                                paint=True,
+                                output=os.path.join(os.path.dirname(file_path),
+                                                    os.pardir,
+                                                    'hough',
+                                                    os.path.basename(file_path)))
                        for file_path in tqdm(file_paths)]
     line_files = [LineImage(p, l) for p, l in zip(file_paths, lines_per_image)]
     pairs = list(zip(line_files, line_files[1:]))
@@ -186,7 +190,8 @@ def stitch(imagedir, output=None, center=True):
         if len(image_translations) > 0:
             translation = np.array(image_translations).mean(0).astype(int)
             key = os.path.basename(current_image.img_path)
-            translations[key] = translation
+            ref = os.path.basename(next_image.img_path)
+            translations[key] = (ref, translation)
             print(current_image.img_path, '-->',
                   next_image.img_path, ':: moved by', translation)
         p = os.path.join(imagedir, os.path.pardir, 'stitch-c' if center else 'stitch-n',
@@ -195,9 +200,10 @@ def stitch(imagedir, output=None, center=True):
 
     if output is not None:
         paths = list(sorted(translations.keys()))
-        xs = [translations[p][0] for p in paths]
-        ys = [translations[p][1] for p in paths]
-        df = pd.DataFrame({'x': xs, 'y': ys}, index=paths)
+        refs = [translations[p][0] for p in paths]
+        xs = [translations[p][1][0] for p in paths]
+        ys = [translations[p][1][1] for p in paths]
+        df = pd.DataFrame({'ref': refs, 'x': xs, 'y': ys}, index=paths)
         print('#####')
         print(df)
         print('#####')
