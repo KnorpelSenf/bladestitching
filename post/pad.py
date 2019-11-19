@@ -17,9 +17,10 @@ def pad(imagedir, translations, output, reference):
     xs = reasonable['x']
     ys = reasonable['y']
 
-    print(len(df.index), 'files supplied, only',
-          len(files), 'have reasonable values (< 800px L1-translation):')
-    print(files)
+    if(len(df.index) > len(files)):
+        print(len(df.index), 'files supplied, only',
+              len(files), 'have reasonable values (< 800px L1-translation):')
+        print(files)
 
     for file in tqdm(files):
         ref = refs[file]
@@ -67,8 +68,6 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--reference',
                         help='Output directory of reference images')
     args = parser.parse_args()
-
-    is_dir = os.path.isdir(args.input)
 
     if not args.output:
         args.output = os.path.join(args.input, os.path.pardir, 'padded')
