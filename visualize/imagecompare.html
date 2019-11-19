@@ -20,6 +20,10 @@
                 <textarea v-model="source_path_original" type="text"
                     placeholder="Paths of source images. Paste the content of the above command inside your directory with original images here."
                     rows="10" style="width: 90%"></textarea>
+                <div>
+                    <button tabIndex="-1" v-on:click="sortOriginalFiles()">Sort</button>
+                    <button tabIndex="-1" v-on:click="clearOriginalFiles()">Clear</button>
+                </div>
             </div>
             <div class="item">
                 <h2>
@@ -28,7 +32,13 @@
                 <textarea v-model="source_path_padded" type="text"
                     placeholder="Paths of source images. Paste the content of the above command inside your directory with padded images here."
                     rows="10" style="width: 90%"></textarea>
+                <div>
+                    <button tabIndex="-1" v-on:click="sortPaddedFiles()">Sort</button>
+                    <button tabIndex="-1" v-on:click="clearPaddedFiles()">Clear</button>
+                </div>
             </div>
+        </div>
+        <div>
         </div>
         Every entry on the left will be compared to the entry with the same index on the right.
         <br>
@@ -49,6 +59,7 @@
             <h2>
                 Images:
             </h2>
+            <button tabindex="-1" v-on:click="reloadImages()">Refresh</button>
             <div v-for="img in this.images">
                 <h3>{{ img.title }} → {{ img.next_title }}</h1>
                     <TwentyTwenty :before="img.path" :after="img.next_path" />
@@ -61,12 +72,34 @@
         function getBaseName(s) {
             return !s ? undefined : s.split(/\//).pop();
         }
+        function sortFiles(s) {
+            return s.split(/\s/).filter(s => !!s.trim()).sort().join('\n');
+        }
         new Vue({
             el: '#app',
             data: function () {
                 return {
                     source_path_original: '',
                     source_path_padded: '',
+                    refreshing: false
+                }
+            },
+            methods: {
+                sortOriginalFiles() {
+                    this.source_path_original = sortFiles(this.source_path_original);
+                },
+                sortPaddedFiles() {
+                    this.source_path_padded = sortFiles(this.source_path_padded);
+                },
+                clearOriginalFiles() {
+                    this.source_path_original = '';
+                },
+                clearPaddedFiles() {
+                    this.source_path_padded = '';
+                },
+                reloadImages() {
+                    this.refreshing = true;
+                    this.refreshing = false;
                 }
             },
             computed: {
@@ -77,6 +110,9 @@
                     return this.source_path_padded.split(/\s/).filter(s => !!s.trim());
                 },
                 images() {
+                    if (this.refreshing) {
+                        return [];
+                    }
 
                     let op = [...this.original_paths];
                     let pp = [...this.padded_paths];
