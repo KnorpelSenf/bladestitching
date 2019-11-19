@@ -13,38 +13,45 @@ def pad(imagedir, translations, output, reference):
     reasonable = df[abs(df['x']) < 800]
     reasonable = reasonable[abs(reasonable['y']) < 800]
     files = reasonable.index
+    refs = reasonable['ref']
     xs = reasonable['x']
     ys = reasonable['y']
-    M = (np.absolute(np.array(xs)) + np.absolute(np.array(ys))).max()
 
     print(len(df.index), 'files supplied, only',
           len(files), 'have reasonable values (< 800px L1-translation):')
     print(files)
-    print('Reference padding is', M)
+
     for file in tqdm(files):
-        in_path = os.path.join(imagedir, file)
-        out_path = os.path.join(output, file)
-        ref_path = os.path.join(reference, file)
-
-        img = cv.imread(in_path)
-
-        ref = cv.copyMakeBorder(img, M, M, M, M, 0)
-        cv.imwrite(ref_path, ref)
-
+        ref = refs[file]
         x = xs[file]
         y = ys[file]
 
-        # print('Next image is', x, 'pixels further right and',
-        #       y, 'pixels further down')
+        in_path_file = os.path.join(imagedir, file)
+        in_path_ref = os.path.join(imagedir, ref)
 
-        top, bottom = M - y, M + y
-        left, right = M - x, M + x
+        out_path_file = os.path.join(output, file)
+        out_path_ref = os.path.join(reference, ref)
 
-        # print('Padding of this image is therefore top =', top, '| bottom =',
-        #       bottom, '| left =', left, '| right =', right)
+        img = cv.imread(in_path_file)
+        ref_img = cv.imread(in_path_ref)
 
-        out = cv.copyMakeBorder(img, top, bottom, left, right, 0)
-        cv.imwrite(out_path, out)
+        # print(ref, 'is', x, 'pixels further right and',
+        #       y, 'pixels further down than', file)
+
+        top_file, bottom_file = (0, y) if y > 0 else (-y, 0)
+        left_file, right_file = (0, x) if x > 0 else (-x, 0)
+
+        top_ref, bottom_ref = (y, 0) if y > 0 else (0, -y)
+        left_ref, right_ref = (0, x) if x > 0 else (0, -x)
+
+        out_img = cv.copyMakeBorder(img,
+                                    top_file, bottom_file, left_file, right_file,
+                                    0)
+        out_ref = cv.copyMakeBorder(ref_img,
+                                    top_ref, bottom_ref, left_ref, right_ref,
+                                    0)
+        cv.imwrite(out_path_file, out_img)
+        cv.imwrite(out_path_ref, out_ref)
 
 
 if __name__ == '__main__':
