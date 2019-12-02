@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 import linedetect.hough as ld
 import linedetect.lineutils as ut
+from linedetect.lineutils import r, t, x, y
 
 
 def stitch(imagedir, output=None, center=True):
@@ -70,113 +71,67 @@ def stitch(imagedir, output=None, center=True):
         # rho, theta are simply x, y in polar coords
         for (c_l, n_l), (c_r, n_r) in twins:
 
-            # Current image's left, bisecting and right line
-            c_rho_l, c_theta_l = c_l
-            c_rho_b, c_theta_b = ut.get_bisecting_line(c_l, c_r)
-            c_rho_r, c_theta_r = c_r
+            # Compute bisecting lines
+            c_b = ut.get_bisecting_line(c_l, c_r)
+            n_b = ut.get_bisecting_line(n_l, n_r)
 
-            # Next image's left, bisecting and right line
-            n_rho_l, n_theta_l = n_l
-            n_rho_b, n_theta_b = ut.get_bisecting_line(n_l, n_r)
-            n_rho_r, n_theta_r = n_r
+            # TODO:
+            # 1) align bisec lines c and n ---> x translation
+            # 2) Rotate l and r accordingly
+            # 3) Rotate entire coords to avoid /0 (cf. prev. TODO)
+            # 4) calc vertical offset for l and r to match (perhaps counting in rotation?) ---> y translation
+            # 5) Rotate everything back to get actual x,y translation
 
-            # Current image's line's foot points
-            c_x_l, c_y_l = (c_rho_l * np.cos(c_theta_l),
-                            c_rho_l * np.sin(c_theta_l))
-            c_x_b, c_y_b = (c_rho_b * np.cos(c_theta_b),
-                            c_rho_b * np.sin(c_theta_b))
-            c_x_r, c_y_r = (c_rho_r * np.cos(c_theta_r),
-                            c_rho_r * np.sin(c_theta_r))
+            # Move this distance to align bisec foot points
+            x_diff_b, y_diff_b = x(n_b) - x(c_b), y(n_b) - y(c_b)
 
-            # Next image's line's foot points
-            n_x_l, n_y_l = (n_rho_l * np.cos(n_theta_l),
-                            n_rho_l * np.sin(n_theta_l))
-            n_x_b, n_y_b = (n_rho_b * np.cos(n_theta_b),
-                            n_rho_b * np.sin(n_theta_b))
-            n_x_r, n_y_r = (n_rho_r * np.cos(n_theta_r),
-                            n_rho_r * np.sin(n_theta_r))
+            # Use these two variables to track the overall translation for each side
+            translate_y_l = y_diff_b
+            translate_y_r = y_diff_b
 
-            translate_x_l = None
-            translate_y_l = None
+            # Move current lines
+            c_l = ut.translate(c_l, x_diff_b, y_diff_b)
+            c_b = ut.translate(c_b, x_diff_b, y_diff_b)
+            c_r = ut.translate(c_r, x_diff_b, y_diff_b)
 
-            translate_x_r = None
-            translate_y_r = None
+            # Foot point should now be equal for both bisecting lines
+            bft_x, bft_y = x(n_b), y(n_b)
 
-            # TODO: rotate everything according to c_b and n_b
-            # in order to avoid /0 error here
+            print('Rotating by', c_b, 'and', n_b,
+                  'and moving current foot point by', x_diff_b, 'and', y_diff_b)
 
-            if not abs(c_theta_l) < 1e-5:
-                x_diff_l = (n_x_l - c_x_l
-                            + n_x_b - c_x_b)
-                y_diff_l = (n_y_l - c_y_l
-                            + n_y_b - c_y_b)
+            # Rotate current lines and next lines
+            # such that the bisection lines are both vertical
+            c_l = ut.rotate(c_b, t(c_b), bft_x, bft_y)
+            c_b = ut.rotate(c_b, t(c_b), bft_x, bft_y)
+            c_r = ut.rotate(c_b, t(c_b), bft_x, bft_y)
+            n_l = ut.rotate(n_b, t(n_b), bft_x, bft_y)
+            n_b = ut.rotate(n_b, t(n_b), bft_x, bft_y)
+            n_r = ut.rotate(n_b, t(n_b), bft_x, bft_y)
 
-                theta_diff_l = (0.5 * np.pi
-                                - c_theta_l
-                                - np.arctan(y_diff_l
-                                            / x_diff_l))
+            # Compute how far both current lines
+            # need to be translated in vertical direction
+            # to match both next lines
+            translate_y_l += ut.vertical_distance(n_l, c_l)
+            translate_y_r += ut.vertical_distance(n_r, c_r)
 
-                bottom_len_l = np.sqrt(x_diff_l * x_diff_l
-                                       + y_diff_l * y_diff_l)
-                up_len_l = (bottom_len_l
-                            * np.sin(theta_diff_l)
-                            / np.sin(c_theta_l))
+            # We only translated horizontally in the beginning
+            translate_x = x_diff_b
+            # Take the average over both translation for left and right
+            translate_y = 0.5 * (translate_y_l + translate_y_r)
 
-                translate_x_l = x_diff_l
-                translate_y_l = y_diff_l + up_len_l
-                # cv.line(img,
-                #         (100, 400),
-                #         (int(100+translate_x_l), int(400 + translate_y_l)),
-                #         (0, 0, 0),
-                #         thickness=1)
+            image_translations.append([translate_x, translate_y])
+            # cv.line(img,
+            #         (200, 400),
+            #         (200 + translate_x, 400 + translate_y),
+            #         (0, 0, 0),
+            #         thickness=3)
 
-            if not abs(c_theta_r) < 1e-5:
-                x_diff_r = (n_x_r - c_x_r
-                            + n_x_b - c_x_b)
-                y_diff_r = (n_y_r - c_y_r
-                            + n_y_b - c_y_b)
-
-                theta_diff_r = (0.5 * np.pi
-                                - c_theta_r
-                                - np.arctan(y_diff_r
-                                            / x_diff_r))
-
-                bottom_len_r = np.sqrt(x_diff_r * x_diff_r
-                                       + y_diff_r * y_diff_r)
-                up_len_r = (bottom_len_r
-                            * np.sin(theta_diff_r)
-                            / np.sin(c_theta_r))
-
-                translate_x_r = x_diff_r
-                translate_y_r = y_diff_r + up_len_r
-                # cv.line(img,
-                #         (300, 400),
-                #         (int(300+translate_x_r), int(400 + translate_y_r)),
-                #         (0, 0, 0),
-                #         thickness=1)
-            else:
-                translate_x_r = translate_x_l
-                translate_y_r = translate_y_l
-
-            if translate_x_l is None:
-                translate_x_l = translate_x_r
-                translate_y_l = translate_y_r
-
-            if translate_x_l is not None:
-                translate_x = 0.5 * (translate_x_l + translate_x_r)
-                translate_y = 0.5 * (translate_y_l + translate_y_r)
-                image_translations.append([translate_x, translate_y])
-                # cv.line(img,
-                #         (200, 400),
-                #         (200 + translate_x, 400 + translate_y),
-                #         (0, 0, 0),
-                #         thickness=3)
-
-                # cv.line(img,
-                #         (-1, 480 + translate_y),
-                #         (10000, 480 + translate_y),
-                #         (0, 0, 0),
-                #         thickness=1)
+            # cv.line(img,
+            #         (-1, 480 + translate_y),
+            #         (10000, 480 + translate_y),
+            #         (0, 0, 0),
+            #         thickness=1)
 
         if len(image_translations) > 0:
             translation = np.array(image_translations).mean(0).astype(int)
