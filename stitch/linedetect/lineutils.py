@@ -87,7 +87,7 @@ def move_origin(line, x, y, normalize=True):
     return normalize(line) if normalize else line
 
 
-def rotate(line, theta, x=0, y=0, normalize=True):
+def rotate(line, theta, x=0, y=0, norm=True):
     """
     Rotates a line around the origin
     or optionally around a given coordinate
@@ -95,16 +95,16 @@ def rotate(line, theta, x=0, y=0, normalize=True):
     """
     custom_anchor = x != 0 or y != 0
     if custom_anchor:
-        line = move_origin(line, x, y, normalize=False)
+        line = move_origin(line, x, y, norm=False)
     r, t = line
     t += theta
     line = (r, t)
     if custom_anchor:
-        line = move_origin(line, -x, -y, normalize=False)
-    return normalize(line) if normalize else line
+        line = move_origin(line, -x, -y, norm=False)
+    return normalize(line) if norm else line
 
 
-def translate(line, x=0, y=0, normalize=True):
+def translate(line, x=0, y=0, norm=True):
     """
     Translates a line by the given distance in x and y direction.
     """
@@ -117,7 +117,8 @@ def translate(line, x=0, y=0, normalize=True):
     # (as we never encounter lines crossing the origin in our data,
     # this usually doesn't happen in practice, but still)
     new_theta = np.arccos(new_x / rho)
-    return new_rho, new_theta
+    line = (new_rho, new_theta)
+    return normalize(line) if norm else line
 
 
 def normalize(line):
