@@ -141,7 +141,9 @@ def hough_all(imagedir, outputfile,
 
     for file in tqdm(sorted(os.listdir(imagedir))):
         imagefile = os.path.join(imagedir, file)
-        paint_outputfile = os.path.join(paint_output, file)
+        paint_outputfile = None
+        if paint_output is not None:
+            paint_outputfile = os.path.join(paint_output, file)
 
         lines = hough(imagefile, outputfile=paint_outputfile,
                       threshold=threshold,
