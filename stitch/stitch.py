@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-import linedetect.hough as ld
-import linedetect.lineutils as ut
+import hough as ld
+import lineutils as ut
 
 
 def stitch(imagedir, output=None, center=True):

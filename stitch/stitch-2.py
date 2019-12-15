@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-import linedetect.hough as ld
-import linedetect.lineutils as ut
-from linedetect.lineutils import r, t, x, y
+import hough as ld
+import lineutils as ut
+from lineutils import r, t, x, y
 
 
 def stitch(imagedir, output=None, center=True):
@@ -74,6 +74,16 @@ def stitch(imagedir, output=None, center=True):
             # Compute bisecting lines
             c_b = ut.get_bisecting_line(c_l, c_r)
             n_b = ut.get_bisecting_line(n_l, n_r)
+
+            print("Current lines are:")
+            print(ut.eq(*c_l))
+            print(ut.eq(*c_b))
+            print(ut.eq(*c_r))
+
+            print("Next lines are:")
+            print(ut.eq(*n_l))
+            print(ut.eq(*n_b))
+            print(ut.eq(*n_r))
 
             # TODO:
             # 1) align bisec lines c and n ---> x translation
