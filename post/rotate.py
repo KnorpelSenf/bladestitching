@@ -7,7 +7,7 @@ import os
 
 def rotate(imagefile, output):
     img = cv.imread(imagefile)
-    img = cv.rotate(imagefile, rotateCode=cv.ROTATE_90_CLOCKWISE)
+    img = cv.rotate(img, rotateCode=cv.ROTATE_90_CLOCKWISE)
     cv.imwrite(output, img)
     print('Rotated', imagefile, 'to', os.path.abspath(output))
 
