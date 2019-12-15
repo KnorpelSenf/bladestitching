@@ -64,7 +64,7 @@ def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     return similar or similar_inverted
 
 
-def move_origin(line, x, y, normalize=True):
+def move_origin(line, x, y, norm=True):
     """
     Transforms a line's representation by moving the origin as specified.
     """
@@ -84,7 +84,7 @@ def move_origin(line, x, y, normalize=True):
         r_prime = x - r
         rho_prime = r_prime * np.cos(theta)
     line = (rho_prime, theta)
-    return normalize(line) if normalize else line
+    return normalize(line) if norm else line
 
 
 def rotate(line, theta, x=0, y=0, norm=True):
@@ -115,7 +115,7 @@ def translate(line, x=0, y=0, norm=True):
     new_rho = np.sqrt(new_x * new_x + new_y * new_y)
     # TODO: calculate fresh theta if old rho was 0
     # (as we never encounter lines crossing the origin in our data,
-    # this usually doesn't happen in practice, but still)
+    # this usually doesn't happen in practice, but still) (edit: does happen indeed.)
     new_theta = np.arccos(new_x / rho)
     line = (new_rho, new_theta)
     return normalize(line) if norm else line
