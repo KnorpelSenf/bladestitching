@@ -61,7 +61,7 @@ def findCenters(lines):
 
 
 def hough(imagefile, outputfile=None,
-          threshold=150,
+          threshold=100,
           normalize=True,
           filterPredicate=None,
           nubPredicate=None,
@@ -132,7 +132,7 @@ def hough(imagefile, outputfile=None,
 
 def hough_all(imagedir, outputfile,
               paint_output=None,
-              threshold=150,
+              threshold=100,
               filterPredicate=None,
               nubPredicate=None,
               verbose=False):
