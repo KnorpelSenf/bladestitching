@@ -151,7 +151,7 @@ def hough_all(imagedir, outputfile,
 
         if lines is not None:
             for line in lines:
-                res.append([imagedir, r(line), t(line)])
+                res.append([file, r(line), t(line)])
 
     df = pd.DataFrame(res, columns=['file', 'rho', 'theta'])
     df.to_csv(outputfile, index=False)
