@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         help='Aggregate translations to output csv if input is directory')
     parser.add_argument('-s', '--strategy', default='center', choices=['center', 'nub'],
                         help='Use center of lines close to each other or Filter out similar lines')
-    parser.add_argument('-t', '--threshold', type=int,
+    parser.add_argument('-t', '--threshold', type=int, default=100,
                         help='Threshold to use for Hough transformation')
     parser.add_argument('-d', '--max-v-deviation', type=float,
                         help='Filter lines by their maximum deviation from the vertical line (good default: 0.5)')
