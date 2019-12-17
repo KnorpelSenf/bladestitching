@@ -239,11 +239,11 @@ class LineImage:
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
                     print('WARNING: Ignoring other similar line(s)!',
-                          [ut.eq(*l) for l in neighbors[1:]])
+                          [ut.eq(l) for l in neighbors[1:]])
                 self.twins[line] = neighbors[0]
             else:
                 print('WARNING: Line cannot be found in next image!',
-                      ut.eq(*line))
+                      ut.eq(line))
 
     def __str__(self):
         return str(self.img_path) + ' has lines ' + str(

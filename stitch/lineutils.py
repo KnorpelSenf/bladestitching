@@ -39,13 +39,21 @@ def y(line):
     return r * np.sin(t)
 
 
-def eq(rho, theta):
+def eq(line):
     """
     Turns a line into a nice string representation.
     """
+    rho, theta = line
     r = str(rho)
     t = str(theta)
     return r + ' = x * sin( ' + t + ' ) + y * cos( ' + t + ' )'
+
+
+def xy(line):
+    """
+    Turns a line into a nice string representation of its foot point.
+    """
+    return 'FP(' + str(x(line)) + ', ' + str(y(line)) + ')'
 
 
 def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
@@ -78,13 +86,11 @@ def move_origin(line, x, y, norm=True):
     rho, theta = line
 
     dist = np.sqrt(x * x + y * y)
-    alpha = (np.arctan(y / x)
-             if x != 0 else np.pi/2
-             if y > 0 else -np.pi/2)
-    if x < 0:
-        alpha += np.pi
+    alpha = np.arctan2(y, x)
+
     omega = theta - alpha
     rho_prime = rho - dist * np.cos(omega)
+
     line = (rho_prime, theta)
     return normalize(line) if norm else line
 

@@ -35,7 +35,7 @@ def naiveNubPredicate(r, s, max_rho=20, max_theta=0.1):
 def naiveFilter(line, max_deviation):
     theta = t(line)
     # print(theta < max_deviation or abs(np.pi - theta)
-    #       < max_deviation, 'for', ut.eq(*line))
+    #       < max_deviation, 'for', ut.eq(line))
     return theta < max_deviation or abs(np.pi - theta) < max_deviation
 
 
@@ -54,8 +54,8 @@ def findCenters(lines):
         else:
             groups[similar_lines[0]].append(line)
             if count > 1:
-                print('Found multiple lines similar to', ut.eq(*line), 'of which the first will be used:',
-                      *[ut.eq(*x) for x in similar_lines])
+                print('Found multiple lines similar to', ut.eq(line), 'of which the first will be used:',
+                      *[ut.eq(x) for x in similar_lines])
 
     return [np.array(group).mean(0) for group in groups.values()]
 
@@ -99,7 +99,7 @@ def hough(imagefile, outputfile=None,
         # Log
         if verbose:
             for line in lines:
-                print(ut.eq(*line))
+                print(ut.eq(line))
 
         # Paint
         if outputfile is not None:
@@ -204,4 +204,4 @@ if __name__ == '__main__':
                       verbose=args.verbose)
         print('RESULT')
         for line in lines:
-            print(ut.eq(*line))
+            print(ut.eq(line))
