@@ -64,25 +64,27 @@ def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     return similar or similar_inverted
 
 
+def translate(line, x=0, y=0, norm=True):
+    """
+    Translates a line by the given distance in x and y direction.
+    """
+    return move_origin(line, -x, -y, norm=norm)
+
+
 def move_origin(line, x, y, norm=True):
     """
     Transforms a line's representation by moving the origin as specified.
     """
     rho, theta = line
-    if y != 0:
-        theta_star = np.arctan(x / y)
-        alpha = 0.5 * np.pi - theta - theta_star
-        cos_alpha = np.cos(alpha)
-        if cos_alpha:
-            r = rho / cos_alpha
-            r_prime = np.sqrt(x * x + y * y) - r
-            rho_prime = r_prime * cos_alpha
-        else:  # do not divide by zero. rho stays the same iff cos_alpha == 0
-            rho_prime = rho
-    else:  # y == 0
-        r = rho / np.cos(theta)
-        r_prime = x - r
-        rho_prime = r_prime * np.cos(theta)
+
+    dist = np.sqrt(x * x + y * y)
+    alpha = (np.arctan(y / x)
+             if x != 0 else np.pi/2
+             if y > 0 else -np.pi/2)
+    if x < 0:
+        alpha += np.pi
+    omega = theta - alpha
+    rho_prime = rho - dist * np.cos(omega)
     line = (rho_prime, theta)
     return normalize(line) if norm else line
 
@@ -101,23 +103,6 @@ def rotate(line, theta, x=0, y=0, norm=True):
     line = (r, t)
     if custom_anchor:
         line = move_origin(line, -x, -y, norm=False)
-    return normalize(line) if norm else line
-
-
-def translate(line, x=0, y=0, norm=True):
-    """
-    Translates a line by the given distance in x and y direction.
-    """
-    rho, theta = line
-    old_x, old_y = (rho * np.cos(theta),
-                    rho * np.sin(theta))
-    new_x, new_y = old_x + x, old_y + y
-    new_rho = np.sqrt(new_x * new_x + new_y * new_y)
-    # TODO: calculate fresh theta if old rho was 0
-    # (as we never encounter lines crossing the origin in our data,
-    # this usually doesn't happen in practice, but still) (edit: does happen indeed.)
-    new_theta = np.arccos(new_x / rho)
-    line = (new_rho, new_theta)
     return normalize(line) if norm else line
 
 
@@ -147,7 +132,7 @@ def get_bisecting_line(l, r):
     rho_r, theta_r = r
 
     # direction of bisecting line
-    theta = 0.5 * (theta_l + theta_r)
+    theta = (theta_l + theta_r) / 2
 
     # coordinates of foot point of l (and r, respectively)
     # (from origin move by rho_l in the direction of theta_l)
@@ -157,8 +142,8 @@ def get_bisecting_line(l, r):
     # move in this direction from foot point of l (and r respectively)
     # to get to the point where the supporting vector of the bisecting
     # line intersects l (and r respectively)
-    alpha_l = 0.5 * np.pi + theta_l
-    alpha_r = 0.5 * np.pi + theta_r
+    alpha_l = np.pi/2 + theta_l
+    alpha_r = np.pi/2 + theta_r
 
     # move by this number of pixels from foot point of l (and r respectively)
     # to get to the point where the supporting vector of the bisecting
@@ -178,7 +163,7 @@ def get_bisecting_line(l, r):
 
     # take center between both computed points, this is where the supporting
     # vector of the bisecting line points
-    x, y = 0.5 * (xn_l + xn_r), 0.5 * (yn_l + yn_r)
+    x, y = (xn_l + xn_r) / 2, (yn_l + yn_r) / 2
 
     # distance from origin
     rho = np.sqrt(x * x + y * y)
@@ -219,8 +204,8 @@ def vertical_distance(line0, line1):
 
     # b is the distance between the two foot points
     b = np.sqrt(dist_x * dist_x + dist_y * dist_y)
-    # it is gamma + arctan(dist_y / dist_x) == 0.5 * pi, so
-    gamma = 0.5 * np.pi - np.arctan(dist_y / dist_x)
+    # it is gamma + arctan(dist_y / dist_x) == pi/2, so
+    gamma = np.pi/2 - np.arctan(dist_y / dist_x)
     # alpha + beta + gamma == pi (if this was not obvious)
     alpha = np.pi - beta - gamma
     # law of sines
