@@ -3,7 +3,7 @@
 
 import numpy as np
 
-# Define selector functions for rho and theta
+# define selector functions for rho and theta
 # as well as the coordinates of the foot point
 
 
@@ -39,6 +39,9 @@ def y(line):
     return r * np.sin(t)
 
 
+# define some functions for pretty-printing lines
+# as well as their foot points
+
 def eq(line):
     """
     Turns a line into a nice string representation.
@@ -55,6 +58,9 @@ def xy(line):
     """
     return 'FP(' + str(x(line)) + ', ' + str(y(line)) + ')'
 
+
+# define a couple of helper functions
+# to perform various computations on lines
 
 def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     """
@@ -85,10 +91,21 @@ def move_origin(line, x, y, norm=True):
     """
     rho, theta = line
 
+    # get polar coordinates of point x, y
     dist = np.sqrt(x * x + y * y)
     alpha = np.arctan2(y, x)
 
+    # imagine a line perpendicular to the given line
+    # that is also crossing through the given point
+
+    # compute the angle between the normal vector of the given line (theta)
+    # and the line from the origin to our given point (alpha)
+    # so we can construct a right triangle over our imagined line
+    # with the line from the origin to our given point as a hypotenuse
     omega = theta - alpha
+
+    # compute new distance from origin, this is the distance from x, y to line
+    # and this very distance is a part of our imagined line
     rho_prime = rho - dist * np.cos(omega)
 
     line = (rho_prime, theta)
