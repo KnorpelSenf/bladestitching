@@ -171,7 +171,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output',
                         help='Aggregate translations to output csv if input is directory')
     parser.add_argument('-s', '--strategy', default='center', choices=['center', 'nub'],
-                        help='Use center of lines close to each other or Filter out similar lines')
+                        help='Use center of lines close to each other or filter out similar lines')
     parser.add_argument('-t', '--threshold', type=int, default=100,
                         help='Threshold to use for Hough transformation')
     parser.add_argument('-d', '--max-v-deviation', type=float,
