@@ -12,30 +12,52 @@ import hough as ld
 import lineutils as ut
 from lineutils import r, t, x, y
 
+blue = (255, 0, 0)
+green = (0, 255, 0)
+red = (0, 0, 255)
+white = (255, 255, 255)
+black = (0, 0, 0)
 
-def stitch(imagedir, output=None, center=True):
-    files = sorted(os.listdir(imagedir))
-    file_paths = [os.path.join(imagedir, file) for file in files]
-    print('Applying Hough transformations to input images ...')
-    lines_per_image = [ld.hough(file_path,
-                                nubPredicate=None
-                                if center
-                                else ld.naiveNubPredicate,
-                                center=center,
-                                filterPredicate=lambda l: ld.naiveFilter(
-                                    l, 0.5),
-                                paint=True,
-                                output=os.path.join(os.path.dirname(file_path),
-                                                    os.pardir,
-                                                    'hough',
-                                                    os.path.basename(file_path)))
-                       for file_path in tqdm(file_paths)]
-    line_files = [LineImage(p, l) for p, l in zip(file_paths, lines_per_image)]
-    pairs = list(zip(line_files, line_files[1:]))
+
+def stitch(imagedir, cachefile=None, output=None, center=True):
+
+    if cachefile is None:
+        # Compute Hough lines from scratch
+        print('Applying Hough transformations to input images ...')
+        files = sorted(os.listdir(imagedir))
+        file_paths = [os.path.join(imagedir, file) for file in files]
+        lines_per_image = [ld.hough(file_path,
+                                    outputfile=os.path.join(os.path.dirname(file_path),
+                                                            os.pardir,
+                                                            'hough',
+                                                            os.path.basename(file_path)),
+                                    filterPredicate=(
+                                        lambda l: ld.naiveFilter(l, 0.5)
+                                    ),
+                                    nubPredicate=(
+                                        None if center else ld.naiveNubPredicate
+                                    ))
+                           for file_path in tqdm(file_paths)]
+        line_files = [LineImage(p, l)
+                      for p, l in zip(file_paths, lines_per_image)]
+    else:
+        # Rely on cache (csv containing lines)
+        print('Reading Hough lines from cache ...')
+        df = pd.read_csv(cachefile)
+        lines_per_file = {file: list(zip(group_df['rho'], group_df['theta']))
+                          for file, group_df in df.groupby(by='file')}
+        line_files = [LineImage(os.path.join(imagedir, p), l)
+                      for p, l
+                      in sorted(lines_per_file.items(), key=lambda x:x[0])]
+
+    for lf in line_files:
+        print(lf)
 
     translations = {}
 
-    for current_image, next_image in pairs:
+    for current_image, next_image in zip(line_files, line_files[1:]):
+        print('+++', current_image.img_path,
+              '--->', next_image.img_path, '+++')
         img = cv.imread(current_image.img_path)
 
         current_image.init_twins(next_image)
@@ -75,15 +97,22 @@ def stitch(imagedir, output=None, center=True):
             c_b = ut.get_bisecting_line(c_l, c_r)
             n_b = ut.get_bisecting_line(n_l, n_r)
 
+            print('+++++++++++')
             print("Current lines are:")
-            print(ut.eq(*c_l))
-            print(ut.eq(*c_b))
-            print(ut.eq(*c_r))
-
+            print(ut.eq(c_l), ut.xy(c_l))
+            print(ut.eq(c_b), ut.xy(c_b))
+            print(ut.eq(c_r), ut.xy(c_r))
             print("Next lines are:")
-            print(ut.eq(*n_l))
-            print(ut.eq(*n_b))
-            print(ut.eq(*n_r))
+            print(ut.eq(n_l), ut.xy(n_l))
+            print(ut.eq(n_b), ut.xy(n_b))
+            print(ut.eq(n_r), ut.xy(n_r))
+
+            draw_line(img, *c_l, black)
+            draw_line(img, *c_b, black)
+            draw_line(img, *c_r, black)
+            draw_line(img, *n_l, white)
+            draw_line(img, *n_b, white)
+            draw_line(img, *n_r, white)
 
             # TODO:
             # 1) align bisec lines c and n ---> x translation
@@ -95,7 +124,13 @@ def stitch(imagedir, output=None, center=True):
             # Move this distance to align bisec foot points
             x_diff_b, y_diff_b = x(n_b) - x(c_b), y(n_b) - y(c_b)
 
-            # Use these two variables to track the overall translation for each side
+            print('[[[')
+            print('Moving current foot point by', x_diff_b, ',', y_diff_b)
+            print('Rotating current by', t(c_b))
+            print('Rotating next by', t(n_b))
+            print(']]]')
+
+            # Use these two variables to track the overall vertical translation for each side
             translate_y_l = y_diff_b
             translate_y_r = y_diff_b
 
@@ -104,20 +139,47 @@ def stitch(imagedir, output=None, center=True):
             c_b = ut.translate(c_b, x_diff_b, y_diff_b)
             c_r = ut.translate(c_r, x_diff_b, y_diff_b)
 
-            # Foot point should now be equal for both bisecting lines
-            bft_x, bft_y = x(n_b), y(n_b)
+            draw_line(img, *c_l, green)
+            draw_line(img, *c_b, green)
+            draw_line(img, *c_r, green)
 
-            print('Rotating by', c_b, 'and', n_b,
-                  'and moving current foot point by', x_diff_b, 'and', y_diff_b)
+            print("Current lines are after translation:")
+            print(ut.eq(c_l), ut.xy(c_l))
+            print(ut.eq(c_b), ut.xy(c_b))
+            print(ut.eq(c_r), ut.xy(c_r))
+            print("Next lines are after translation:")
+            print(ut.eq(n_l), ut.xy(n_l))
+            print(ut.eq(n_b), ut.xy(n_b))
+            print(ut.eq(n_r), ut.xy(n_r))
+
+            # Foot points should now be "equal" (deviate less than 1 pixel) for the bisecting lines
+            bft_x, bft_y = x(n_b), y(n_b)  # = x(c_b), y(c_b)
 
             # Rotate current lines and next lines
             # such that the bisection lines are both vertical
-            c_l = ut.rotate(c_b, t(c_b), bft_x, bft_y)
-            c_b = ut.rotate(c_b, t(c_b), bft_x, bft_y)
-            c_r = ut.rotate(c_b, t(c_b), bft_x, bft_y)
-            n_l = ut.rotate(n_b, t(n_b), bft_x, bft_y)
-            n_b = ut.rotate(n_b, t(n_b), bft_x, bft_y)
-            n_r = ut.rotate(n_b, t(n_b), bft_x, bft_y)
+            c_rotate, n_rotate = -t(c_b), -t(n_b)
+            c_l = ut.rotate(c_l, c_rotate, bft_x, bft_y)
+            c_b = ut.rotate(c_b, c_rotate, bft_x, bft_y)
+            c_r = ut.rotate(c_r, c_rotate, bft_x, bft_y)
+            n_l = ut.rotate(n_l, n_rotate, bft_x, bft_y)
+            n_b = ut.rotate(n_b, n_rotate, bft_x, bft_y)
+            n_r = ut.rotate(n_r, n_rotate, bft_x, bft_y)
+
+            print("Current lines are after rotation:")
+            print(ut.eq(c_l), ut.xy(c_l))
+            print(ut.eq(c_b), ut.xy(c_b))
+            print(ut.eq(c_r), ut.xy(c_r))
+            print("Next lines are after rotation:")
+            print(ut.eq(n_l), ut.xy(n_l))
+            print(ut.eq(n_b), ut.xy(n_b))
+            print(ut.eq(n_r), ut.xy(n_r))
+
+            draw_line(img, *c_l, red)
+            draw_line(img, *c_b, red)
+            draw_line(img, *c_r, red)
+            draw_line(img, *n_l, blue)
+            draw_line(img, *n_b, blue)
+            draw_line(img, *n_r, blue)
 
             # Compute how far both current lines
             # need to be translated in vertical direction
@@ -125,23 +187,16 @@ def stitch(imagedir, output=None, center=True):
             translate_y_l += ut.vertical_distance(n_l, c_l)
             translate_y_r += ut.vertical_distance(n_r, c_r)
 
-            # We only translated horizontally in the beginning
+            print('Vertical distances are:')
+            print('LEFT', translate_y_l)
+            print('RIGHT', translate_y_r)
+
+            # The only time we translated horizontally was in the beginning, so we just copy that value
             translate_x = x_diff_b
             # Take the average over both translation for left and right
             translate_y = 0.5 * (translate_y_l + translate_y_r)
 
             image_translations.append([translate_x, translate_y])
-            # cv.line(img,
-            #         (200, 400),
-            #         (200 + translate_x, 400 + translate_y),
-            #         (0, 0, 0),
-            #         thickness=3)
-
-            # cv.line(img,
-            #         (-1, 480 + translate_y),
-            #         (10000, 480 + translate_y),
-            #         (0, 0, 0),
-            #         thickness=1)
 
         if len(image_translations) > 0:
             translation = np.array(image_translations).mean(0).astype(int)
@@ -166,6 +221,19 @@ def stitch(imagedir, output=None, center=True):
         print(df)
         print('#####')
         df.to_csv(output)
+
+
+def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
+    a = np.cos(theta)
+    b = np.sin(theta)
+    x0 = a * rho
+    y0 = b * rho
+    x1 = int(x0 + b * -1000)
+    y1 = int(y0 + a * 1000)
+    x2 = int(x0 - b * -1000)
+    y2 = int(y0 - a * 1000)
+
+    cv.line(img, (x1, y1), (x2, y2), color, width)
 
 
 class LineImage:
@@ -204,15 +272,16 @@ class LineImage:
             if(len(neighbors) > 0):
                 if(len(neighbors) > 1):
                     print('WARNING: Ignoring other similar line(s)!',
-                          [ut.eq(*l) for l in neighbors[1:]])
+                          [ut.eq(l) for l in neighbors[1:]])
                 self.twins[line] = neighbors[0]
             else:
                 print('WARNING: Line cannot be found in next image!',
-                      ut.eq(*line))
+                      ut.eq(line))
 
     def __str__(self):
-        return str(self.img_path) + ' has lines ' + str(
-            self.lines) + ' which correspond to ' + str(self.twins)
+        return (str(self.img_path)
+                + ' has lines ' + str(self.lines)
+                + ' which correspond to ' + str(self.twins))
 
 # def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
 #     a = np.cos(theta)
@@ -232,11 +301,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('input', help='Image directory')
+    parser.add_argument('input',
+                        help='Image directory')
     parser.add_argument('strategy', choices=['nub', 'center'],
                         help='Decide whether adjacent lines should be discarded or joined')
-    parser.add_argument('-o', '--output', help='Output file')
+    parser.add_argument('-c', '--cache',
+                        help='Cache file containing precomputed hough lines')
+    parser.add_argument('-o', '--output',
+                        help='Output file')
 
     args = parser.parse_args()
 
-    stitch(args.input, output=args.output, center=args.strategy == 'center')
+    stitch(args.input,
+           cachefile=args.cache,
+           output=args.output,
+           center=args.strategy == 'center')
