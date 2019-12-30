@@ -47,16 +47,16 @@ def eq(line):
     Turns a line into a nice string representation.
     """
     rho, theta = line
-    r = str(rho)
-    t = str(theta)
-    return r + ' = x * sin( ' + t + ' ) + y * cos( ' + t + ' )'
+    r = '{:6.2f}'.format(float(rho))
+    t = '{:4.4f}'.format(float(theta))
+    return r + ' = x * sin(' + t + ') + y * cos(' + t + ')'
 
 
 def xy(line):
     """
     Turns a line into a nice string representation of its foot point.
     """
-    return 'FP(' + str(x(line)) + ', ' + str(y(line)) + ')'
+    return 'FP({:4d}, {:4d})'.format(x(line), y(line))
 
 
 # define a couple of helper functions
