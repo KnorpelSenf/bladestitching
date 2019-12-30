@@ -214,10 +214,10 @@ def vertical_distance(line0, line1):
     # and b is the distance between the two foot points
     # (we will call this the main triangle)
     # in order to compute a from the other values
-    # (they can easily be determined by looking at the lines)
+    # (they can easily be determined by looking at line0 and line1)
 
     # compute the opposite angle of b
-    beta = t(line0)  # (!)
+    beta = -t(line0)  # (!)
     sinbeta = np.sin(beta)
 
     if not sinbeta:
