@@ -25,23 +25,25 @@ def merge(offsetsfile, imagedir, outputfile):
 
         print(current, '->', ref, '|', x, y)
 
+        # w, h of current image
         w_img, h_img = img.shape[0], img.shape[1]
+
+        # relative x, relative y, w, h of next image
+        x_ref, y_ref = current_x + x, current_y + y
         w_ref, h_ref = ref_img.shape[0], ref_img.shape[1]
 
-        next_x, next_y = current_x + x, current_y + y
+        border_right = max(0, x_ref + w_ref - w_img)
+        border_bottom = max(0, y_ref + h_ref - h_img)
 
-        border_right = max(0, next_x + w_ref - w_img)
-        border_bottom = max(0, next_y + h_ref - h_img)
-
-        if next_x < 0:
-            border_left = -next_x
-            next_x = 0
+        if x_ref < 0:
+            border_left = -x_ref
+            x_ref = 0
         else:
             border_left = 0
 
-        if next_y < 0:
-            border_top = -next_y
-            next_y = 0
+        if y_ref < 0:
+            border_top = -y_ref
+            y_ref = 0
         else:
             border_top = 0
 
@@ -49,8 +51,9 @@ def merge(offsetsfile, imagedir, outputfile):
                                 border_top, border_bottom, border_left, border_right,
                                 0)
 
-        img[next_x:w_ref, next_y:h_ref] = ref_img
+        img[x_ref:x_ref+w_ref, y_ref:y_ref+h_ref] = ref_img
 
+        current_x, current_y = x_ref, y_ref
         current = ref
 
     cv.imwrite(outputfile, img)
