@@ -50,15 +50,9 @@ def stitch(imagedir, cachefile=None, output=None, center=True):
                       for p, l
                       in sorted(lines_per_file.items(), key=lambda x:x[0])]
 
-    for lf in line_files:
-        print(lf)
-
     translations = {}
 
     for current_image, next_image in zip(line_files, line_files[1:]):
-        print('+++', current_image.img_path,
-              '--->', next_image.img_path, '+++')
-        img = cv.imread(current_image.img_path)
 
         current_image.init_twins(next_image)
 
@@ -97,38 +91,8 @@ def stitch(imagedir, cachefile=None, output=None, center=True):
             c_b = ut.get_bisecting_line(c_l, c_r)
             n_b = ut.get_bisecting_line(n_l, n_r)
 
-            print('+++++++++++')
-            print("Current lines are:")
-            print(ut.eq(c_l), ut.xy(c_l))
-            print(ut.eq(c_b), ut.xy(c_b))
-            print(ut.eq(c_r), ut.xy(c_r))
-            print("Next lines are:")
-            print(ut.eq(n_l), ut.xy(n_l))
-            print(ut.eq(n_b), ut.xy(n_b))
-            print(ut.eq(n_r), ut.xy(n_r))
-
-            draw_line(img, *c_l, black)
-            draw_line(img, *c_b, black)
-            draw_line(img, *c_r, black)
-            draw_line(img, *n_l, white)
-            draw_line(img, *n_b, white)
-            draw_line(img, *n_r, white)
-
-            # TODO:
-            # 1) align bisec lines c and n ---> x translation
-            # 2) Rotate l and r accordingly
-            # 3) Rotate entire coords to avoid /0 (cf. prev. TODO)
-            # 4) calc vertical offset for l and r to match (perhaps counting in rotation?) ---> y translation
-            # 5) Rotate everything back to get actual x,y translation
-
             # Move this distance to align bisec foot points
             x_diff_b, y_diff_b = x(n_b) - x(c_b), y(n_b) - y(c_b)
-
-            print('[[[')
-            print('Moving current foot point by', x_diff_b, ',', y_diff_b)
-            print('Rotating current by', t(c_b))
-            print('Rotating next by', t(n_b))
-            print(']]]')
 
             # Use these two variables to track the overall vertical translation for each side
             translate_y_l = y_diff_b
@@ -139,21 +103,11 @@ def stitch(imagedir, cachefile=None, output=None, center=True):
             c_b = ut.translate(c_b, x_diff_b, y_diff_b)
             c_r = ut.translate(c_r, x_diff_b, y_diff_b)
 
-            draw_line(img, *c_l, green)
-            draw_line(img, *c_b, green)
-            draw_line(img, *c_r, green)
-
-            print("Current lines are after translation:")
-            print(ut.eq(c_l), ut.xy(c_l))
-            print(ut.eq(c_b), ut.xy(c_b))
-            print(ut.eq(c_r), ut.xy(c_r))
-            print("Next lines are after translation:")
-            print(ut.eq(n_l), ut.xy(n_l))
-            print(ut.eq(n_b), ut.xy(n_b))
-            print(ut.eq(n_r), ut.xy(n_r))
-
             # Foot points should now be "equal" (deviate less than 1 pixel) for the bisecting lines
             bft_x, bft_y = x(n_b), y(n_b)  # = x(c_b), y(c_b)
+
+            # TODO: can we account for the following rotation
+            # in the final translation values?
 
             # Rotate current lines and next lines
             # such that the bisection lines are both vertical
@@ -165,31 +119,11 @@ def stitch(imagedir, cachefile=None, output=None, center=True):
             n_b = ut.rotate(n_b, n_rotate, bft_x, bft_y)
             n_r = ut.rotate(n_r, n_rotate, bft_x, bft_y)
 
-            print("Current lines are after rotation:")
-            print(ut.eq(c_l), ut.xy(c_l))
-            print(ut.eq(c_b), ut.xy(c_b))
-            print(ut.eq(c_r), ut.xy(c_r))
-            print("Next lines are after rotation:")
-            print(ut.eq(n_l), ut.xy(n_l))
-            print(ut.eq(n_b), ut.xy(n_b))
-            print(ut.eq(n_r), ut.xy(n_r))
-
-            draw_line(img, *c_l, red)
-            draw_line(img, *c_b, red)
-            draw_line(img, *c_r, red)
-            draw_line(img, *n_l, blue)
-            draw_line(img, *n_b, blue)
-            draw_line(img, *n_r, blue)
-
             # Compute how far both current lines
             # need to be translated in vertical direction
             # to match both next lines
             translate_y_l += ut.vertical_distance(n_l, c_l)
             translate_y_r += ut.vertical_distance(n_r, c_r)
-
-            print('Vertical distances are:')
-            print('LEFT', translate_y_l)
-            print('RIGHT', translate_y_r)
 
             # The only time we translated horizontally was in the beginning, so we just copy that value
             translate_x = x_diff_b
@@ -203,37 +137,19 @@ def stitch(imagedir, cachefile=None, output=None, center=True):
             key = os.path.basename(current_image.img_path)
             ref = os.path.basename(next_image.img_path)
             translations[key] = (ref, translation)
-            print(current_image.img_path, '-->',
-                  next_image.img_path, ':: moved by', translation)
-        p_dir = os.path.join(imagedir, os.path.pardir,
-                             'stitch-c' if center else 'stitch-n')
-        os.makedirs(p_dir, exist_ok=True)
-        p = os.path.join(p_dir, os.path.basename(current_image.img_path))
-        cv.imwrite(p, img)
 
+    paths = list(sorted(translations.keys()))
+    refs = [translations[p][0] for p in paths]
+    xs = [translations[p][1][0] for p in paths]
+    ys = [translations[p][1][1] for p in paths]
+    df = pd.DataFrame({'ref': refs, 'x': xs, 'y': ys}, index=paths)
     if output is not None:
-        paths = list(sorted(translations.keys()))
-        refs = [translations[p][0] for p in paths]
-        xs = [translations[p][1][0] for p in paths]
-        ys = [translations[p][1][1] for p in paths]
-        df = pd.DataFrame({'ref': refs, 'x': xs, 'y': ys}, index=paths)
-        print('#####')
-        print(df)
-        print('#####')
+        print('Done.', output)
         df.to_csv(output)
-
-
-def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + b * -1000)
-    y1 = int(y0 + a * 1000)
-    x2 = int(x0 - b * -1000)
-    y2 = int(y0 - a * 1000)
-
-    cv.line(img, (x1, y1), (x2, y2), color, width)
+    else:
+        print('Done. Result:')
+        print(df)
+        print('Results not written to disk as output file was not specified.')
 
 
 class LineImage:
@@ -266,34 +182,25 @@ class LineImage:
                         lambda l: ld.ut.are_lines_similar(l, line),
                         image.lines
                     ),
-                    key=lambda l: l[0] - line[0]
+                    # similarity heuristic: compare distances of foot points from origin
+                    key=lambda l: abs(r(line) - r(l))
                 )
             )
             if(len(neighbors) > 0):
+                twin = neighbors[0]
                 if(len(neighbors) > 1):
-                    print('WARNING: Ignoring other similar line(s)!',
-                          [ut.eq(l) for l in neighbors[1:]])
-                self.twins[line] = neighbors[0]
+                    print('WARNING: Ignoring other similar line(s) of',
+                          ut.eq(line), 'besides', ut.eq(twin) + '!', '(', self.img_path, ')')
+                    print([ut.eq(l) for l in neighbors[1:]])
+                self.twins[line] = twin
             else:
                 print('WARNING: Line cannot be found in next image!',
-                      ut.eq(line))
+                      ut.eq(line), '(', self.img_path, ')')
 
     def __str__(self):
         return (str(self.img_path)
                 + ' has lines ' + str(self.lines)
                 + ' which correspond to ' + str(self.twins))
-
-# def draw_line(img, rho, theta, color=(0, 0, 255), width=2):
-#     a = np.cos(theta)
-#     b = np.sin(theta)
-#     x0 = a * rho
-#     y0 = b * rho
-#     x1 = int(x0 + b * -1000)
-#     y1 = int(y0 + a * 1000)
-#     x2 = int(x0 - b * -1000)
-#     y2 = int(y0 - a * 1000)
-
-#     cv.line(img, (x1, y1), (x2, y2), color, width)
 
 
 if __name__ == '__main__':
