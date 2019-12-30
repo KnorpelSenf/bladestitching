@@ -246,5 +246,5 @@ def vertical_distance(line0, line1):
     gamma = np.pi/2 + np.arctan2(dist_y, dist_x)
     # alpha + beta + gamma == pi (if this was not obvious)
     alpha = np.pi - beta - gamma
-    # law of sines in the
+    # law of sines in the main triangle
     return np.sin(alpha) * b / sinbeta
