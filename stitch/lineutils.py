@@ -66,7 +66,8 @@ def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     """
     Returns true if two given normalized lines
     do not deviate too far from each other
-    as specified by the parameters.
+    as specified by the parameters,
+    and false otherwise.
     """
     rho_r, theta_r = r
     rho_s, theta_s = s
@@ -196,40 +197,54 @@ def get_bisecting_line(l, r):
 
 def vertical_distance(line0, line1):
     """
-    Computes the vertical distance `line1` needs to moved
-    such that it's foot point lies on `line0`.
+    Computes the distance `line1` needs to moved vertically
+    such that its foot point lies on `line0`. If `line0` is
+    a vertical line (its theta value is either `0` or `pi`),
+    this distance is either 0 (if `line1`'s foot point is on `line0`)
+    or it cannot be defined (if `line1`'s foot point is not on `line0`).
+    In both cases, `0` is returned.
     """
-    # coordinates of foot points
-    x0, y0 = x(line0), y(line0)
-    x1, y1 = x(line1), y(line1)
 
     # construct a triangle between the two foot points
     # and the point that has the same x coordinate as line1's foot point
     # but lies on line0
 
-    # apply the law of sines to this triangle
+    # we will later apply the law of sines to our triangle
     # where a is the vertical distance
     # and b is the distance between the two foot points
-    dist_x = x0 - x1
-    dist_y = y0 - y1
+    # (we will call this the main triangle)
+    # in order to compute a from the other values
+    # (they can easily be determined by looking at the lines)
 
-    if not dist_x:
-        # a == b && c == 0 && gamma == 0 holds true
-        return dist_y
-
+    # compute the opposite angle of b
     beta = t(line0)  # (!)
     sinbeta = np.sin(beta)
 
     if not sinbeta:
-        # beta in { 0, pi }, so a is on both line0 and line1,
-        # therefore it is line0 == line1
+        # beta in { 0, pi }, so a is on line0
+        # and it is also parallel to line1,
+        # therefore line1's foot point is already on line0
+        # (or it could never be moved there)
         return 0
 
-    # b is the distance between the two foot points
+    # coordinates of foot points
+    x0, y0 = x(line0), y(line0)
+    x1, y1 = x(line1), y(line1)
+
+    # L1 distance between foot points
+    dist_x = x0 - x1
+    dist_y = y0 - y1
+
+    if not dist_x:
+        # x0 == x1 holds true yielding gamma == 0
+        return dist_y
+
+    # recall that b is the distance between the two foot points
     b = np.sqrt(dist_x * dist_x + dist_y * dist_y)
-    # it is gamma + arctan(dist_y / dist_x) == pi/2, so
-    gamma = np.pi/2 - np.arctan(dist_y / dist_x)
+    # np.pi/2 + gamma + (-arctan2(dist_y, dist_x)) == pi
+    # holds true in the triangle between the a, b and the x axis
+    gamma = np.pi/2 + np.arctan2(dist_y, dist_x)
     # alpha + beta + gamma == pi (if this was not obvious)
     alpha = np.pi - beta - gamma
-    # law of sines
+    # law of sines in the
     return np.sin(alpha) * b / sinbeta
