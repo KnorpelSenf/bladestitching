@@ -13,36 +13,15 @@ import lineutils as ut
 from lineutils import r, t, x, y
 
 
-def stitch(imagedir, cachefile=None, output=None, center=True):
+def stitch(imagedir, cachefile, output=None):
 
-    if cachefile is None:
-        # Compute Hough lines from scratch
-        print('Applying Hough transformations to input images ...')
-        files = sorted(os.listdir(imagedir))
-        file_paths = [os.path.join(imagedir, file) for file in files]
-        lines_per_image = [ld.hough(file_path,
-                                    outputfile=os.path.join(os.path.dirname(file_path),
-                                                            os.pardir,
-                                                            'hough',
-                                                            os.path.basename(file_path)),
-                                    filterPredicate=(
-                                        lambda l: ld.naiveFilter(l, 0.5)
-                                    ),
-                                    nubPredicate=(
-                                        None if center else ld.naiveNubPredicate
-                                    ))
-                           for file_path in tqdm(file_paths)]
-        line_files = [LineImage(p, l)
-                      for p, l in zip(file_paths, lines_per_image)]
-    else:
-        # Rely on cache (csv containing lines)
-        print('Reading Hough lines from cache ...')
-        df = pd.read_csv(cachefile)
-        lines_per_file = {file: list(zip(group_df['rho'], group_df['theta']))
-                          for file, group_df in df.groupby(by='file')}
-        line_files = [LineImage(os.path.join(imagedir, p), l)
-                      for p, l
-                      in sorted(lines_per_file.items(), key=lambda x:x[0])]
+    print('Reading Hough lines')
+    df = pd.read_csv(cachefile)
+    lines_per_file = {file: list(zip(group_df['rho'], group_df['theta']))
+                      for file, group_df in df.groupby(by='file')}
+    line_files = [LineImage(os.path.join(imagedir, p), l)
+                  for p, l
+                  in sorted(lines_per_file.items(), key=lambda x:x[0])]
 
     translations = {}
 
@@ -202,18 +181,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument('hough',
+                        help='File containing precomputed hough lines')
     parser.add_argument('input',
                         help='Image directory')
-    parser.add_argument('strategy', choices=['nub', 'center'],
-                        help='Decide whether adjacent lines should be discarded or joined')
-    parser.add_argument('-c', '--cache',
-                        help='Cache file containing precomputed hough lines')
     parser.add_argument('-o', '--output',
                         help='Output file')
 
     args = parser.parse_args()
 
-    stitch(args.input,
-           cachefile=args.cache,
-           output=args.output,
-           center=args.strategy == 'center')
+    stitch(args.input, args.hough,
+           output=args.output)
