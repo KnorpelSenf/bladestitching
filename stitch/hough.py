@@ -109,10 +109,10 @@ def hough(imagefile, outputfile=None,
                 b = np.sin(theta)
                 x0 = a * rho
                 y0 = b * rho
-                x1 = int(x0 + 1000 * (-b))
-                y1 = int(y0 + 1000 * (a))
-                x2 = int(x0 - 1000 * (-b))
-                y2 = int(y0 - 1000 * (a))
+                x1 = int(x0 + 10000 * (-b))
+                y1 = int(y0 + 10000 * (a))
+                x2 = int(x0 - 10000 * (-b))
+                y2 = int(y0 - 10000 * (a))
 
                 cv.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
