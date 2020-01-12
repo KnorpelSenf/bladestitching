@@ -86,7 +86,7 @@ def translate(line, x=0, y=0, norm=True):
     return move_origin(line, -x, -y, norm=norm)
 
 
-def move_origin(line, x, y, norm=True):
+def move_origin(line, x=0, y=0, norm=True):
     """
     Transforms a line's representation by moving the origin as specified.
     """
