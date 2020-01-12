@@ -12,12 +12,6 @@ import hough as ld
 import lineutils as ut
 from lineutils import r, t, x, y
 
-blue = (255, 0, 0)
-green = (0, 255, 0)
-red = (0, 0, 255)
-white = (255, 255, 255)
-black = (0, 0, 0)
-
 
 def stitch(imagedir, cachefile=None, output=None, center=True):
 
