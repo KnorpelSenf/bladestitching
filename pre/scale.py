@@ -4,23 +4,27 @@
 import cv2 as cv
 import numpy as np
 import os
+from tqdm import tqdm
 
 
-def scale(imagefile, output, factor, interpolation=cv.INTER_LINEAR):
+def scale(imagefile, output, factor, interpolation=cv.INTER_LINEAR, verbose=True):
     img = cv.imread(imagefile)
     img = cv.resize(img, None, fx=factor, fy=factor,
                     interpolation=interpolation)
     cv.imwrite(output, img)
-    print('Scaled', 'up' if factor > 1 else
-          'down' if factor < 1 else
-          'without change', imagefile, 'to',  os.path.abspath(output))
+    if verbose:
+        print('Scaled', 'up' if factor > 1 else
+              'down' if factor < 1 else
+              'without change', imagefile, 'to',  os.path.abspath(output))
 
 
 def scale_all(imagedir, output, factor, interpolation=cv.INTER_LINEAR):
-    for file in sorted(os.listdir(imagedir)):
+    for file in tqdm(list(sorted(os.listdir(imagedir)))):
         imagefile = os.path.join(imagedir, file)
         outputfile = os.path.join(output, file)
-        scale(imagefile, outputfile, factor, interpolation=interpolation)
+        scale(imagefile, outputfile, factor,
+              interpolation=interpolation, verbose=False)
+    print('Scaled all images from', imagedir, 'to', output, 'by', factor)
 
 
 if __name__ == '__main__':
