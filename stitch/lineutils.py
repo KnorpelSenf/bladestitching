@@ -79,6 +79,27 @@ def are_lines_similar(r, s, max_rho=30, max_theta=0.1):
     return similar or similar_inverted
 
 
+def is_line_left(line, x, y):
+    """
+    Returns true if the given line is right of the given point
+    in the sense that the line's foot point
+    would be in the first or fourth quadrant
+    if the given point would be the origin.
+    """
+    return not is_line_right(line, x, y)
+
+
+def is_line_right(line, x, y):
+    """
+    Returns true if the given line is left of the given point
+    in the sense that the line's foot point
+    would be in the second or third quadrant
+    if the given point would be the origin.
+    """
+    halfpi = np.pi / 2
+    return -halfpi <= t(move_origin(line, x, y, norm=True)) < halfpi
+
+
 def translate(line, x=0, y=0, norm=True):
     """
     Translates a line by the given distance in x and y direction.
