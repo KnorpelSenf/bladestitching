@@ -119,6 +119,9 @@ def tmatch(hough, stitch, inputdir, method, outputfile=None,
                              max_loc_y - radiuspx)
             print(point, '::', res_point)
 
+        # TODO: aggregate points of image
+    # TODO: write out csv file
+
 
 def build_grid(w, h, dist, border=0):
     xs = list(range(border, w - border, dist))
