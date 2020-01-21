@@ -105,17 +105,9 @@ Crop your images from north, south, east and west using `pre/crop.py`.
 
 Scale your images by any factor and using any interpolation method using `pre/scale.py`.
 
-## Feature detection tasks
+## Stitching, postprocessing tasks, visualization, feature detection
 
-Use `featuredetect/gftt.py` and `featuredetect/sift.py` to find features with Good Features to Track and SIFT, respectively.
-
-## Line detection tasks
-
-Use `linedetect/hough.py` to detect Hough lines.
-
-## Image stitching
-
-Image stitching will be performed solely on detected Hough lines, making feature detection obsolete.
-
-* Distances d1...dn of lines at known points (offset from image border)
-* d1...dn will occur at similar points in next image, compute average movement
+Confer the above description to find out about what inputs a scripts relies on and what it yields as a result.
+In general, all inputs are mandatory arguments, while a possible output needs to be specified excplicitely with the `-o` flag.
+Kindly supply `--help` to get a detailed description of the available arguments per script.
+Also, don't hesitate to read the arg parsing as it is straightforward.
