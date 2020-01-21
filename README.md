@@ -6,21 +6,42 @@ Source code and more for Steffen Trog's bachelor thesis.
 
 So far, this repo contains code that performs the following tasks:
 
-1) Preprocessing. This includes:
-    * Take AVI video files recorded by drones flying along rotor blades of wind engines as input,
-    * Trim the videos manually to the relevant parts,
+1) **Preprocessing.**
+This includes the following steps, all of which are achieved by a separate, adequately named script.
+All scripts take AVI video files recorded by drones flying along rotor blades of wind engines as input.
+    * Trim the videos manually to the relevant parts
     * Sample JPG images from the trimmed video at a given fps rate
-    * Crop the resulting images, and
-    * Scale the resulting images.
-2) Feature detection. This includes:
-    * Take an image (or a directory full of images) as input,
-    * Detect and highlight features using Good Features to Track (GFTT), or
-    * Detect and hightlight features using Scale Invariant Feature Transform (SIFT).
-3) Line detection. This includes:
-    * Take an image (or a directory full of images) as input, and
-    * Detect lines using a Hough transform.
+    * Crop the resulting images
+    * Scale the resulting images
+1) **Feature detection.**
+These scripts take an image (or a directory full of images) as input.
+Note that feature detection has been found to fail on the given data as the number of features on the background outweigh those on the rotor blade by a far margin in number and temporal robustness.
+    * Detect and highlight features using Good Features to Track (GFTT)
+    * Detect and hightlight features using Scale Invariant Feature Transform (SIFT)
+    * Apply template matching to further refine the results of the Hough stitching package.
+1) **Hough stitching.**
+This package also contains a utility module named `lineutils.py` that provides basic geometric operations to other scripts in the same directory. All other files take again an image or a directory of images as input.
+They're supposed to work on the output of the preprocessing scripts.
+    * Apply a Hough transformation and store the resulting linear equations (polar coordinates) in a CSV file, non-injectively keyed by file names
+    * Use a CSV file of linear equations to compute a basic stitching result, thus outputting a list of pixel-wise translations per file name
+    * The same thing with a little optimization that is well justified but deteriorating the results
+    * “Intelligently” color the background of an image based on Hough lines, outputting an image containing all black but the rotor blade (or any other color, if specified)
+1) **Postprocessing.**
+A few helper scripts that achieve the following.
+    * Average over a Hough stitching result in a sliding window manner
+    * Merge multiple image files into a panorama based on a CSV file containing pixel-wise translations per file name
+    * Apply padding to image files based on pixel-wise translations so both images can be viewed as if they we're in the same coordinate system
+    * Rotate an image (or all images in a directory) by 90 degrees clockwise.
+1) **Visualization.**
+There's a Vue.js based visualization HTML file providing a minimal UI to interactively explore the quality of stiching results.
+Requires padded images to ensure comparability.
+Note that the Vue library will be loaded via CDN, so a network connection will be required.
 
 All code will be provided with at least a minimal documentation.
+Many scripts will rely heavily on geometric constructions.
+Variables are named accordingly.
+Often, the constructions will be described along the lines.
+Please feel encouraged to grab a pencil and a sheet of paper if you wish to follow along.
 
 ## Installation
 
@@ -34,16 +55,19 @@ pip install -r requirements.txt
 
 ## Directory structure
 
-| Directory       | What's in there           |
-|-----------------|---------------------------|
-| `pre`           | Preprocessing scripts     |
-| `featuredetect` | Feature detection scripts |
-| `linedetect`    | Line detection scripts    |
+| Directory   | What's in there                         |
+|-------------|-----------------------------------------|
+| `pre`       | Preprocessing scripts                   |
+| `stitch`    | Hough line based stitching              |
+| `post`      | Postprocessing scripts                  |
+| `unused`    | Feature detection and template matching |
+| `visualize` | Visualization                           |
+
+For all python scripts mentioned in the following sections you can get detailed usage instructions by supplying `--help`.
 
 ## Preprocessing tasks
 
 There's a number of preprocessing steps to perform on the AVI video files.
-For all python scripts mentioned in this section you can get detailed usage instructions by supplying `--help`.
 
 All scripts working on images also work on a directory.
 Supply a directory to image processing scripts to apply the same script for all images inside the directory.
