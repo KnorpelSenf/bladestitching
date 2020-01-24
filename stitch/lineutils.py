@@ -269,3 +269,18 @@ def vertical_distance(line0, line1):
     alpha = np.pi - beta - gamma
     # law of sines in the main triangle
     return np.sin(alpha) * b / sinbeta
+
+
+def root(line):
+    """
+    Assume `cos(t(line)) != 0`. Be `f` the linear function
+    that describes `line`.
+
+    This function then solves `f(x) = 0` for `x` and returns `x`.
+    In other words, it returns the `x` value of the intersection point
+    between the given line and the x-axis.
+
+    Crashes on `cos(t(line)) == 0` (division by zero).
+    """
+    rho, theta = line
+    return rho / np.cos(theta)
