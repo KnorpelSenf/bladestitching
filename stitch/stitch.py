@@ -23,18 +23,27 @@ def stitch(imagedir, cachefile, output=None):
                   for p, l
                   in sorted(lines_per_file.items(), key=lambda x:x[0])]
 
+    # dict holding final translation values
     translations = {}
 
+    # pairs of images n and n+1
     for current_image, next_image in zip(line_files, line_files[1:]):
 
+        # find out which line in the current image
+        # corresponds to which line in the next image
+
+        # we call these pairs twins
         current_image.init_twins(next_image)
 
+        # current lines
         c_lines = current_image.lines
+        # next lines
         n_lines = [current_image.twins[line]
                    if line in current_image.twins
                    else None
                    for line in c_lines]
 
+        # filter out entries where no twin was found
         line_pairs = list(
             filter(
                 lambda p: p[1] is not None,
@@ -43,12 +52,15 @@ def stitch(imagedir, cachefile, output=None):
             )
         )
 
+        # we need two twins (that is, four lines) for each translation computation,
+        # so we generate all possible combinations of twins (pairs of twins)
         count = len(line_pairs)
-        twins = [(line_pairs[l], line_pairs[r])
-                 for l in range(0, count)
-                 for r in range(l + 1, count)]
+        twin_combinations = [(line_pairs[l], line_pairs[r])
+                             for l in range(0, count)
+                             for r in range(l + 1, count)]
 
-        image_translations = []
+        # translation values for each pair of twins
+        image_translations = {}
 
         # Naming conventions:
         # Prefix c_ stands for C_urrent set of lines
@@ -58,7 +70,7 @@ def stitch(imagedir, cachefile, output=None):
         # Postfix _r stands for _Right line
         # x means x coord, y means y coord of foot point
         # rho, theta are simply x, y in polar coords
-        for (c_l, n_l), (c_r, n_r) in twins:
+        for (c_l, n_l), (c_r, n_r) in twin_combinations:
 
             # Compute bisecting lines
             c_b = ut.get_bisecting_line(c_l, c_r)
@@ -79,8 +91,9 @@ def stitch(imagedir, cachefile, output=None):
             # Foot points should now be "equal" (deviate less than 1 pixel) for the bisecting lines
             bft_x, bft_y = x(n_b), y(n_b)  # = x(c_b), y(c_b)
 
-            # TODO: can we account for the following rotation
-            # in the final translation values?
+            # Note how we never account for the following rotation
+            # in the final translation values, see stitchrelative.py
+            # for a script that does this (and produces worse results!)
 
             # Rotate current lines and next lines
             # such that the bisection lines are both vertical
@@ -103,10 +116,15 @@ def stitch(imagedir, cachefile, output=None):
             # Take the average over both translation for left and right
             translate_y = 0.5 * (translate_y_l + translate_y_r)
 
-            image_translations.append([translate_x, translate_y])
+            image_translations[((c_l, n_l), (c_r, n_r))] = [
+                translate_x, translate_y]
+
+        # Optimize result based on error function
+        optimize_line_distances(image_translations)
 
         if len(image_translations) > 0:
-            translation = np.array(image_translations).mean(0).astype(int)
+            translation = np.array(
+                list(image_translations.values())).mean(0).astype(int)
             key = os.path.basename(current_image.img_path)
             ref = os.path.basename(next_image.img_path)
             translations[key] = (ref, translation)
@@ -122,7 +140,22 @@ def stitch(imagedir, cachefile, output=None):
     else:
         print('Done. Result:')
         print(df)
-        print('Results not written to disk as output file was not specified.')
+        print('Result not written to disk as output file was not specified.')
+
+
+def optimize_line_distances(image_translations):
+    # image 1, image 2
+    # lines from 1, lines from 2
+    # translation from 1 -> 2
+    # translate all lines from 1 by translation to align them to lines from 2
+    # compute distance via error function over all
+    # create surrounding area around target translation value
+    # brute force compute error function over all points in that space
+    # find minimum
+    # adjust translation value to this
+
+    # AND DON'T FORGET TO DUMP EVERYTING TO STDOUT!!!
+    pass
 
 
 class LineImage:
