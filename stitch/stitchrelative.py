@@ -84,9 +84,6 @@ def stitch(imagedir, cachefile, output=None):
             # Foot points should now be "equal" (deviate less than 1 pixel) for the bisecting lines
             bft_x, bft_y = x(n_b), y(n_b)  # = x(c_b), y(c_b)
 
-            # TODO: can we account for the following rotation
-            # in the final translation values?
-
             # Rotate current lines and next lines
             # such that the bisection lines are both vertical
             c_rotate, n_rotate = -t(c_b), -t(n_b)
