@@ -13,7 +13,13 @@ import lineutils as ut
 from lineutils import r, t, x, y
 
 
-def stitch(imagedir, cachefile, output=None):
+def fst(x): return x[0]
+
+
+def snd(x): return x[1]
+
+
+def stitch(imagedir, image_height, cachefile, output=None):
 
     print('Reading Hough lines')
     df = pd.read_csv(cachefile)
@@ -21,7 +27,7 @@ def stitch(imagedir, cachefile, output=None):
                       for file, group_df in df.groupby(by='file')}
     line_files = [LineImage(os.path.join(imagedir, p), l)
                   for p, l
-                  in sorted(lines_per_file.items(), key=lambda x:x[0])]
+                  in sorted(lines_per_file.items(), key=fst)]
 
     # dict holding final translation values
     translations = {}
@@ -60,7 +66,7 @@ def stitch(imagedir, cachefile, output=None):
                              for r in range(l + 1, count)]
 
         # translation values for each pair of twins
-        image_translations = {}
+        image_translations = []
 
         # Naming conventions:
         # Prefix c_ stands for C_urrent set of lines
@@ -70,6 +76,8 @@ def stitch(imagedir, cachefile, output=None):
         # Postfix _r stands for _Right line
         # x means x coord, y means y coord of foot point
         # rho, theta are simply x, y in polar coords
+
+        #   left twin   right twin
         for (c_l, n_l), (c_r, n_r) in twin_combinations:
 
             # Compute bisecting lines
@@ -105,9 +113,9 @@ def stitch(imagedir, cachefile, output=None):
             n_b = ut.rotate(n_b, n_rotate, bft_x, bft_y)
             n_r = ut.rotate(n_r, n_rotate, bft_x, bft_y)
 
-            # Compute how far both current lines
+            # Compute how far the current lines
             # need to be translated in vertical direction
-            # to match both next lines
+            # to match the next lines
             translate_y_l += ut.vertical_distance(n_l, c_l)
             translate_y_r += ut.vertical_distance(n_r, c_r)
 
@@ -116,15 +124,20 @@ def stitch(imagedir, cachefile, output=None):
             # Take the average over both translation for left and right
             translate_y = 0.5 * (translate_y_l + translate_y_r)
 
-            image_translations[((c_l, n_l), (c_r, n_r))] = [
-                translate_x, translate_y]
-
-        # Optimize result based on error function
-        optimize_line_distances(image_translations)
+            image_translations.append([translate_x, translate_y])
 
         if len(image_translations) > 0:
-            translation = np.array(
-                list(image_translations.values())).mean(0).astype(int)
+            # average over all values and round to pixel accuracy
+            translation = np.rint(
+                np.array(image_translations)
+                .mean(0)
+            ).astype(int)
+
+            # Optimize result based on error function
+            translation = optimize_line_distances(
+                line_pairs, translation, image_height)
+
+            # store reference image and translation value in result dict
             key = os.path.basename(current_image.img_path)
             ref = os.path.basename(next_image.img_path)
             translations[key] = (ref, translation)
@@ -143,26 +156,70 @@ def stitch(imagedir, cachefile, output=None):
         print('Result not written to disk as output file was not specified.')
 
 
-def optimize_line_distances(image_translations):
-    # image 1, image 2
-    # lines from 1, lines from 2
-    # translation from 1 -> 2
-    # translate all lines from 1 by translation to align them to lines from 2
-    # compute distance via error function over all
-    # create surrounding area around target translation value
-    # brute force compute error function over all points in that space
-    # find minimum
-    # adjust translation value to this
+def optimize_line_distances(line_pairs, translation, image_height, l1radius=200):
+    tx, ty = translation
 
-    # AND DON'T FORGET TO DUMP EVERYTING TO STDOUT!!!
-    pass
+    # move origin of lines
+    # so that we can also compute the error function
+    # based on the bottom border of the image
+    line_pairs_bottom = [(ut.move_origin(c_l, y=image_height),
+                          ut.move_origin(n_l, y=image_height))
+                         for c_l, n_l in line_pairs]
+
+    print('Optimizing for', translation, 'with')
+    print(*zip(line_pairs, line_pairs_bottom))
+
+    # create surrounding area around target translation value
+    attempts = [(x, y)
+                for x in range(tx - l1radius, tx + l1radius + 1)
+                for y in range(ty - l1radius, ty + l1radius + 1)]
+
+    print('Attempting:')
+    print(attempts)
+
+    print('Errors are')
+    print([int(compute_error(line_pairs, t)) for t in attempts],
+          'min =', min([int(compute_error(line_pairs, t)) for t in attempts]))
+    print('---')
+    print([int(compute_error(line_pairs_bottom, t)) for t in attempts],
+          'min =', min([int(compute_error(line_pairs_bottom, t)) for t in attempts]))
+
+    errors = [(translation,
+               compute_error(line_pairs, translation)
+               + compute_error(line_pairs_bottom, translation))
+              for translation in attempts]
+
+    print(np.array(errors))
+
+    print('==>', translation, '>>>', min(errors, key=snd))
+
+    return min(errors, key=snd)[0]
+
+
+################################################################################
+### TODO: something does not work with the error function yet, try manually? ###
+################################################################################
+
+def compute_error(line_pairs, translation):
+    """
+    Takes a list of line pairs (current lines and next lines)
+    as well as a translation (x, y)
+    and returns the sum of squared distances of the lines' roots.
+    """
+    tx, ty = translation
+    translated_lines = ((ut.translate(c_l, x=tx, y=ty), n_l)
+                        for c_l, n_l in line_pairs)
+    deviations = (ut.root(n_l) - ut.root(c_l)
+                  for c_l, n_l in translated_lines)
+    squared_error = (x * x for x in deviations)
+    return sum(squared_error)
 
 
 class LineImage:
     """
-    LineImages contain an image path and a list of Hough lines with it.
+    `LineImage`s contain an image path and a list of Hough lines with it.
     Hough lines will automatically be normalized upon instantiation
-    as specified by linedetect.lineutils.normalize(line).
+    as specified by `lineutils.normalize(line)`.
     """
 
     def __init__(self, img_path, lines=[]):
@@ -172,8 +229,8 @@ class LineImage:
 
     def init_twins(self, image):
         """
-        Takes an image and matches self.lines with image.lines to generate
-        pairs of closest lines. Result will be stored in self.twins property.
+        Takes an image and matches `self.lines` with image.lines to generate
+        pairs of closest lines. Result will be stored in `self.twins` property.
         """
         # TODO: find metric that works more generically, create clusters with two elements each
         # print('Finding neighbors for', len(
@@ -218,10 +275,12 @@ if __name__ == '__main__':
                         help='File containing precomputed hough lines')
     parser.add_argument('input',
                         help='Image directory')
+    parser.add_argument('height', type=int,
+                        help='Image height')
     parser.add_argument('-o', '--output',
                         help='Output file')
 
     args = parser.parse_args()
 
-    stitch(args.input, args.hough,
+    stitch(args.input, args.height, args.hough,
            output=args.output)
