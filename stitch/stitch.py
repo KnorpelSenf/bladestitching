@@ -19,7 +19,7 @@ def fst(x): return x[0]
 def snd(x): return x[1]
 
 
-def stitch(imagedir, image_height, cachefile, output=None):
+def stitch(imagedir, image_height, cachefile, l1radius=50, output=None):
 
     print('Reading Hough lines')
     df = pd.read_csv(cachefile)
@@ -135,7 +135,9 @@ def stitch(imagedir, image_height, cachefile, output=None):
 
             # Optimize result based on error function
             translation = optimize_line_distances(
-                line_pairs, translation, image_height)
+                line_pairs, translation, image_height,
+                l1radius=l1radius
+            )
 
             # store reference image and translation value in result dict
             key = os.path.basename(current_image.img_path)
@@ -156,62 +158,75 @@ def stitch(imagedir, image_height, cachefile, output=None):
         print('Result not written to disk as output file was not specified.')
 
 
-def optimize_line_distances(line_pairs, translation, image_height, l1radius=200):
+def optimize_line_distances(line_pairs, translation, image_height, l1radius=50):
     tx, ty = translation
 
     # move origin of lines
     # so that we can also compute the error function
     # based on the bottom border of the image
-    line_pairs_bottom = [(ut.move_origin(c_l, y=image_height),
-                          ut.move_origin(n_l, y=image_height))
-                         for c_l, n_l in line_pairs]
+    line_pairs_bottom = [(ut.move_origin(c, y=image_height),
+                          ut.move_origin(n, y=image_height))
+                         for c, n in line_pairs]
 
-    print('Optimizing for', translation, 'with')
-    print(*zip(line_pairs, line_pairs_bottom))
+    # print('Optimizing for', translation, 'with')
+    # print(*zip(line_pairs, line_pairs_bottom))
 
     # create surrounding area around target translation value
     attempts = [(x, y)
                 for x in range(tx - l1radius, tx + l1radius + 1)
                 for y in range(ty - l1radius, ty + l1radius + 1)]
 
-    print('Attempting:')
-    print(attempts)
-
-    print('Errors are')
-    print([int(compute_error(line_pairs, t)) for t in attempts],
-          'min =', min([int(compute_error(line_pairs, t)) for t in attempts]))
-    print('---')
-    print([int(compute_error(line_pairs_bottom, t)) for t in attempts],
-          'min =', min([int(compute_error(line_pairs_bottom, t)) for t in attempts]))
-
     errors = [(translation,
-               compute_error(line_pairs, translation)
-               + compute_error(line_pairs_bottom, translation))
+               compute_error(line_pairs, translation, image_height))
               for translation in attempts]
 
-    print(np.array(errors))
+    # print(np.array(errors))
 
     print('==>', translation, '>>>', min(errors, key=snd))
 
     return min(errors, key=snd)[0]
 
 
-################################################################################
-### TODO: something does not work with the error function yet, try manually? ###
-################################################################################
-
-def compute_error(line_pairs, translation):
+def compute_error(line_pairs, translation, image_height):
     """
     Takes a list of line pairs (current lines and next lines)
     as well as a translation (x, y)
-    and returns the sum of squared distances of the lines' roots.
+    and returns the sum of squared distances of the lines' roots
+    at both the top and the bottom border of the image.
     """
     tx, ty = translation
-    translated_lines = ((ut.translate(c_l, x=tx, y=ty), n_l)
-                        for c_l, n_l in line_pairs)
-    deviations = (ut.root(n_l) - ut.root(c_l)
-                  for c_l, n_l in translated_lines)
-    squared_error = (x * x for x in deviations)
+
+    # [(current at origin of next, next)]
+    translated_lines = list(((ut.move_origin(c, x=tx, y=ty),
+                              n)
+                             for c, n in line_pairs))
+
+    # [(current, next, current at bottom border, next at bottom border)]
+    border_lines = list(((c,
+                          n,
+                          ut.move_origin(c, y=image_height),
+                          ut.move_origin(n, y=image_height))
+                         for c, n in translated_lines))
+
+    # [(distance current <-> next, ditto at bottom border)]
+    deviations = list(((ut.root(n) - ut.root(c),  # top error
+                        ut.root(nb) - ut.root(cb))  # bottom error
+                       for c, n, cb, nb in border_lines))
+
+
+    squared_error = list((x * x + y * y for x, y in deviations))
+
+    print('--:', translation)
+    print(list(zip(line_pairs, deviations)))
+    print(squared_error)
+    print(sum(squared_error))
+    print('############# vvv')
+    print('LP', line_pairs)
+    print('TL', translated_lines)
+    print('BL', border_lines)
+    print('RT', [list(map(lambda x: ut.root(x), l)) for l in border_lines])
+    print('############# ^^^')
+
     return sum(squared_error)
 
 
@@ -277,10 +292,13 @@ if __name__ == '__main__':
                         help='Image directory')
     parser.add_argument('height', type=int,
                         help='Image height')
+    parser.add_argument('-l', '--local-optimization', type=int, default=20,
+                        help='Maximum L1 radius of local optimization')
     parser.add_argument('-o', '--output',
                         help='Output file')
 
     args = parser.parse_args()
 
     stitch(args.input, args.height, args.hough,
+           l1radius=args.local_optimization,
            output=args.output)
