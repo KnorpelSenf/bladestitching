@@ -33,7 +33,7 @@ def stitch(imagedir, image_height, cachefile, l1radius=50, output=None):
     translations = {}
 
     # pairs of images n and n+1
-    for current_image, next_image in zip(line_files, line_files[1:]):
+    for current_image, next_image in tqdm(zip(line_files, line_files[1:]), total=len(line_files) - 1):
 
         # find out which line in the current image
         # corresponds to which line in the next image
@@ -168,9 +168,6 @@ def optimize_line_distances(line_pairs, translation, image_height, l1radius=50):
                           ut.move_origin(n, y=image_height))
                          for c, n in line_pairs]
 
-    # print('Optimizing for', translation, 'with')
-    # print(*zip(line_pairs, line_pairs_bottom))
-
     # create surrounding area around target translation value
     attempts = [(x, y)
                 for x in range(tx - l1radius, tx + l1radius + 1)
@@ -179,10 +176,6 @@ def optimize_line_distances(line_pairs, translation, image_height, l1radius=50):
     errors = [(translation,
                compute_error(line_pairs, translation, image_height))
               for translation in attempts]
-
-    # print(np.array(errors))
-
-    print('==>', translation, '>>>', min(errors, key=snd))
 
     return min(errors, key=snd)[0]
 
@@ -197,35 +190,23 @@ def compute_error(line_pairs, translation, image_height):
     tx, ty = translation
 
     # [(current at origin of next, next)]
-    translated_lines = list(((ut.move_origin(c, x=tx, y=ty),
+    translated_lines = ((ut.move_origin(c, x=tx, y=ty),
                               n)
-                             for c, n in line_pairs))
+                             for c, n in line_pairs)
 
     # [(current, next, current at bottom border, next at bottom border)]
-    border_lines = list(((c,
+    border_lines = ((c,
                           n,
                           ut.move_origin(c, y=image_height),
                           ut.move_origin(n, y=image_height))
-                         for c, n in translated_lines))
+                         for c, n in translated_lines)
 
     # [(distance current <-> next, ditto at bottom border)]
-    deviations = list(((ut.root(n) - ut.root(c),  # top error
+    deviations = ((ut.root(n) - ut.root(c),  # top error
                         ut.root(nb) - ut.root(cb))  # bottom error
-                       for c, n, cb, nb in border_lines))
+                       for c, n, cb, nb in border_lines)
 
-
-    squared_error = list((x * x + y * y for x, y in deviations))
-
-    print('--:', translation)
-    print(list(zip(line_pairs, deviations)))
-    print(squared_error)
-    print(sum(squared_error))
-    print('############# vvv')
-    print('LP', line_pairs)
-    print('TL', translated_lines)
-    print('BL', border_lines)
-    print('RT', [list(map(lambda x: ut.root(x), l)) for l in border_lines])
-    print('############# ^^^')
+    squared_error = (x * x + y * y for x, y in deviations)
 
     return sum(squared_error)
 
