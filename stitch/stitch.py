@@ -191,20 +191,20 @@ def compute_error(line_pairs, translation, image_height):
 
     # [(current at origin of next, next)]
     translated_lines = ((ut.move_origin(c, x=tx, y=ty),
-                              n)
-                             for c, n in line_pairs)
+                         n)
+                        for c, n in line_pairs)
 
     # [(current, next, current at bottom border, next at bottom border)]
     border_lines = ((c,
-                          n,
-                          ut.move_origin(c, y=image_height),
-                          ut.move_origin(n, y=image_height))
-                         for c, n in translated_lines)
+                     n,
+                     ut.move_origin(c, y=image_height),
+                     ut.move_origin(n, y=image_height))
+                    for c, n in translated_lines)
 
     # [(distance current <-> next, ditto at bottom border)]
     deviations = ((ut.root(n) - ut.root(c),  # top error
-                        ut.root(nb) - ut.root(cb))  # bottom error
-                       for c, n, cb, nb in border_lines)
+                   ut.root(nb) - ut.root(cb))  # bottom error
+                  for c, n, cb, nb in border_lines)
 
     squared_error = (x * x + y * y for x, y in deviations)
 
