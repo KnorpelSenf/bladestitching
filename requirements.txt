@@ -2,3 +2,4 @@ ffmpeg-python
 opencv-python
 opencv-contrib-python==3.3.0.10
 pandas
+scipy
