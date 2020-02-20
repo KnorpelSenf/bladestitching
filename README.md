@@ -108,6 +108,6 @@ Scale your images by any factor and using any interpolation method using `pre/sc
 ## Stitching, postprocessing tasks, visualization, feature detection
 
 Confer the above description to find out about what inputs a scripts relies on and what it yields as a result.
-In general, all inputs are mandatory arguments, while a possible output needs to be specified excplicitely with the `-o` flag.
+In general, all inputs are mandatory arguments, while a possible output needs to be specified explicitely with the `-o` flag.
 Kindly supply `--help` to get a detailed description of the available arguments per script.
 Also, don't hesitate to read the arg parsing as it is straightforward.
