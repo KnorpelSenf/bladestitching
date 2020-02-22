@@ -13,7 +13,7 @@ for count in {10,20,50,100,200,500,1000,5000}; do
             mkdir $P $P/gftt
 
             echo "Count: $count | Quality: $quality | Distance: $distance >>> $P"
-            ./stitch/hough.py data/processed/dec19/kalkar1/thermal/data/ -o $P/gftt -c $count -q $quality -d $distance > $P/log.txt
+            ./unused/gftt.py data/processed/dec19/kalkar1/thermal/data/ -o $P/gftt -c $count -q $quality -d $distance > $P/log.txt
 
         done
     done

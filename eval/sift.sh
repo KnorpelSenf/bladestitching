@@ -13,7 +13,7 @@ for count in {0,10,20,50,100,200,500,1000,2000,5000,10000}; do
             mkdir $P $P/sift
 
             echo "Count: $count | CT: $ct | ET: $et >>> $P"
-            ./stitch/hough.py data/processed/dec19/kalkar1/thermal/data/ -o $P/sift -c $count -q $ct -d $et > $P/log.txt
+            ./unused/sift.py data/processed/dec19/kalkar1/thermal/data/ -o $P/sift -c $count -q $ct -d $et > $P/log.txt
 
         done
     done
