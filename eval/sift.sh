@@ -12,8 +12,8 @@ for count in {0,10,20,50,100,200,500,1000,2000,5000,10000}; do
             P=data/processed/dec19/kalkar1/thermal/eval/sift/$count/$ct/$et
             mkdir $P $P/sift
 
-            echo "Count: $count | CT: $ct | ET: $et >>> $P"
-            ./unused/sift.py data/processed/dec19/kalkar1/thermal/data/ -o $P/sift -c $count --contrast-threshold $ct --edge-threshold $et > $P/log.txt
+            echo "Count: $count | CT: 0.0$ct | ET: $et >>> $P"
+            ./unused/sift.py data/processed/dec19/kalkar1/thermal/data/ -o $P/sift -c $count --contrast-threshold 0.0$ct --edge-threshold $et > $P/log.txt
 
         done
     done
