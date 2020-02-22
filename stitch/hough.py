@@ -2,6 +2,7 @@
 # -*- coding: utf8 -*-
 
 import os
+from concurrent import futures
 
 import cv2 as cv
 import numpy as np
@@ -135,11 +136,11 @@ def hough_all(imagedir, outputfile,
               threshold=100,
               filterPredicate=None,
               nubPredicate=None,
-              verbose=False):
+              verbose=False,
+              max_workers=4):
 
-    res = []
-
-    for file in tqdm(sorted(os.listdir(imagedir))):
+    def helper_func(file):
+        rows = []
         imagefile = os.path.join(imagedir, file)
         paint_outputfile = None
         if paint_output is not None:
@@ -153,9 +154,18 @@ def hough_all(imagedir, outputfile,
 
         if lines is not None:
             for line in lines:
-                res.append([file, r(line), t(line)])
+                rows.append([file, r(line), t(line)])
 
-    df = pd.DataFrame(res, columns=['file', 'rho', 'theta'])
+        return rows
+
+    files = sorted(os.listdir(imagedir))
+    res = []
+
+    with futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
+        for rows in tqdm(ex.map(helper_func, files), total=len(files)):
+            res += rows
+
+    df = pd.DataFrame(sorted(res), columns=['file', 'rho', 'theta'])
     df.to_csv(outputfile, index=False)
 
 
@@ -178,6 +188,8 @@ if __name__ == '__main__':
                         help='Filter lines by their maximum deviation from the vertical line (good default: 0.5)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print verbose line equations')
+    parser.add_argument('--max-workers', type=int, default=4,
+                        help='Maximum number of threads to use')
 
     args = parser.parse_args()
 
@@ -192,7 +204,8 @@ if __name__ == '__main__':
                   ) if args.max_v_deviation is not None else None,
                   nubPredicate=naiveNubPredicate
                   if args.strategy == 'nub' else None,
-                  verbose=args.verbose)
+                  verbose=args.verbose,
+                  max_workers=args.max_workers)
     else:
         lines = hough(args.input, outputfile=args.paint,
                       threshold=args.threshold,
