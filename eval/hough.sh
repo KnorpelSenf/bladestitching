@@ -1,13 +1,15 @@
 #!/bin/bash
 
+mkdir data/processed/dec19/kalkar1/thermal/eval/hough
+
 for strategy in {center,nub}; do
-    mkdir data/processed/dec19/kalkar1/thermal/eval/$strategy
+    mkdir data/processed/dec19/kalkar1/thermal/eval/hough/$strategy
 
     for threshold in {50..250..10}; do
-        mkdir data/processed/dec19/kalkar1/thermal/eval/$strategy/$threshold
+        mkdir data/processed/dec19/kalkar1/thermal/eval/hough/$strategy/$threshold
 
         for maxvdev in {1..8}; do
-            P=data/processed/dec19/kalkar1/thermal/eval/$strategy/$threshold/$maxvdev
+            P=data/processed/dec19/kalkar1/thermal/eval/hough/$strategy/$threshold/$maxvdev
             mkdir $P $P/hough
 
             echo "Strategy: $strategy | Threshold: $threshold | Max dev: 0.$maxvdev >>> $P"
