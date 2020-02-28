@@ -15,8 +15,8 @@ def gftt(imagefile, output, featurecount=25, minquality=0.01, mindist=10):
         x, y = i.ravel()
         cv.circle(img, (x, y), 3, 255, -1)
     cv.imwrite(output, img)
-    print('Applied Good Features to Track from',
-          imagefile, 'to',  os.path.abspath(output))
+    print('Applied Good Features to Track from', imagefile, 'to',  os.path.abspath(output),
+          'and found', len(corners), 'features')
 
 
 def gftt_all(imagedir, output, featurecount=25, minquality=0.01, mindist=10):

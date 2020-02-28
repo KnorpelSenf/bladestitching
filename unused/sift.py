@@ -19,7 +19,8 @@ def sift(imagefile, output,
            else cv.drawKeypoints(img, kp, img, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS))
 
     cv.imwrite(output, img)
-    print('Applied SIFT from', imagefile, 'to',  os.path.abspath(output))
+    print('Applied SIFT from', imagefile, 'to',  os.path.abspath(output),
+          'and found', len(kp), 'features')
 
 
 def sift_all(imagedir, output,
