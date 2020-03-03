@@ -36,12 +36,14 @@ def naiveNubPredicate(r, s, max_rho=20, max_theta=0.1):
 def naiveFilter(line, max_deviation):
     theta = t(line)
     return (abs(theta) < max_deviation
-            or abs(np.pi - theta) < max_deviation)
+            or abs(np.pi - theta) < max_deviation
+            or abs(np.pi + theta) < max_deviation)
 
 
 def findCenters(lines):
 
-    groups = {}  # Check similarity with keys. Values are lists of similar lines
+    # Groups of similar lines. Check similarity with dict keys. Dict values are lists of similar lines.
+    groups = {}
 
     for line in lines:
         similar_lines = list(filter(
@@ -49,11 +51,11 @@ def findCenters(lines):
             groups.keys()
         ))
         count = len(similar_lines)
-        if count == 0:
+        if count == 0:  # no similar lines found, open up new group
             groups[line] = [line]
-        else:
+        else:  # similar line found, add this to its group
             groups[similar_lines[0]].append(line)
-            if count > 1:
+            if count > 1:  # multiple similar lines found!
                 print('Found multiple lines similar to', ut.eq(line), 'of which the first will be used:',
                       *[ut.eq(x) for x in similar_lines])
 
