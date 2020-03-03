@@ -65,6 +65,7 @@ def hough(imagefile, outputfile=None,
           threshold=100,
           normalize=True,
           filterPredicate=None,
+          center=True,
           nubPredicate=None,
           verbose=False):
 
@@ -92,10 +93,10 @@ def hough(imagefile, outputfile=None,
             lines = filter(filterPredicate, lines)
 
         # Center or nub
-        if nubPredicate is not None:
-            lines = nubBy(nubPredicate, lines)
-        else:
+        if center:
             lines = findCenters(lines)
+        elif nubPredicate is not None:
+            lines = nubBy(nubPredicate, lines)
 
         # Log
         if verbose:
@@ -135,6 +136,7 @@ def hough_all(imagedir, outputfile,
               paint_output=None,
               threshold=100,
               filterPredicate=None,
+              center=True,
               nubPredicate=None,
               verbose=False,
               max_workers=4):
@@ -149,6 +151,7 @@ def hough_all(imagedir, outputfile,
         lines = hough(imagefile, outputfile=paint_outputfile,
                       threshold=threshold,
                       filterPredicate=filterPredicate,
+                      center=center,
                       nubPredicate=nubPredicate,
                       verbose=verbose)
 
@@ -180,7 +183,7 @@ if __name__ == '__main__':
                         help='Output file or directory to draw lines')
     parser.add_argument('-o', '--output',
                         help='Aggregate translations to output csv if input is directory')
-    parser.add_argument('-s', '--strategy', default='center', choices=['center', 'nub'],
+    parser.add_argument('-s', '--strategy', default='center', choices=['center', 'nub', 'none'],
                         help='Use center of lines close to each other or filter out similar lines')
     parser.add_argument('-t', '--threshold', type=int, default=100,
                         help='Threshold to use for Hough transformation')
@@ -202,6 +205,7 @@ if __name__ == '__main__':
                   filterPredicate=(
                       lambda l: naiveFilter(l, args.max_v_deviation)
                   ) if args.max_v_deviation is not None else None,
+                  center=args.strategy == 'center',
                   nubPredicate=naiveNubPredicate
                   if args.strategy == 'nub' else None,
                   verbose=args.verbose,
@@ -212,6 +216,7 @@ if __name__ == '__main__':
                       filterPredicate=(
                           lambda l: naiveFilter(l, args.max_v_deviation)
                       ) if args.max_v_deviation is not None else None,
+                      center=args.strategy == 'center',
                       nubPredicate=naiveNubPredicate
                       if args.strategy == 'nub' else None,
                       verbose=args.verbose)
