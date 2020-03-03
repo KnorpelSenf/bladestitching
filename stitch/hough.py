@@ -35,9 +35,8 @@ def naiveNubPredicate(r, s, max_rho=20, max_theta=0.1):
 
 def naiveFilter(line, max_deviation):
     theta = t(line)
-    # print(theta < max_deviation or abs(np.pi - theta)
-    #       < max_deviation, 'for', ut.eq(line))
-    return theta < max_deviation or abs(np.pi - theta) < max_deviation
+    return (abs(theta) < max_deviation
+            or abs(np.pi - theta) < max_deviation)
 
 
 def findCenters(lines):
