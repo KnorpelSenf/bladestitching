@@ -91,7 +91,7 @@ def hough(imagefile, outputfile=None,
 
         # Filter
         if filterPredicate is not None:
-            lines = filter(filterPredicate, lines)
+            lines = list(filter(filterPredicate, lines))
 
         # Center or nub
         if center:
