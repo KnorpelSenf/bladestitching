@@ -63,7 +63,7 @@ def findCenters(lines):
 
 
 def hough(imagefile, outputfile=None,
-          threshold=100,
+          threshold=80,
           normalize=True,
           filterPredicate=None,
           center=True,
@@ -127,7 +127,7 @@ def hough(imagefile, outputfile=None,
     line_count = len(lines)
     if line_count < 2:
         print('WARNING: number of lines is merely',
-                line_count, 'in image file', imagefile)
+              line_count, 'in image file', imagefile)
 
     if verbose:
         print('Applied Hough transform on', imagefile,
@@ -137,7 +137,7 @@ def hough(imagefile, outputfile=None,
 
 def hough_all(imagedir, outputfile,
               paint_output=None,
-              threshold=100,
+              threshold=80,
               filterPredicate=None,
               center=True,
               nubPredicate=None,
@@ -188,10 +188,10 @@ if __name__ == '__main__':
                         help='Aggregate translations to output csv if input is directory')
     parser.add_argument('-s', '--strategy', default='center', choices=['center', 'nub', 'none'],
                         help='Use center of lines close to each other or filter out similar lines')
-    parser.add_argument('-t', '--threshold', type=int, default=100,
+    parser.add_argument('-t', '--threshold', type=int, default=80,
                         help='Threshold to use for Hough transformation')
     parser.add_argument('-d', '--max-v-deviation', type=float,
-                        help='Filter lines by their maximum deviation from the vertical line (good default: 0.5)')
+                        help='Filter lines by their maximum deviation from the vertical line (recommendation: 0.3)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print verbose line equations')
     parser.add_argument('--max-workers', type=int, default=4,
