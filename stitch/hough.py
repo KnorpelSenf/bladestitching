@@ -80,52 +80,54 @@ def hough(imagefile, outputfile=None,
     lines = cv.HoughLines(edges, 1, np.pi/180/100, threshold)
 
     if lines is None:
-        print('No lines found in', imagefile, ' :(')
-    else:
-        # Unpack lists of single elements
-        lines = [l for [l] in lines]
-
-        # Normalize
-        if normalize:
-            lines = [ut.normalize(l) for l in lines]
-
-        # Filter
-        if filterPredicate is not None:
-            lines = list(filter(filterPredicate, lines))
-
-        # Center or nub
-        if center:
-            lines = findCenters(lines)
-        elif nubPredicate is not None:
-            lines = nubBy(nubPredicate, lines)
-
-        # Log
+        lines = []
         if verbose:
-            for line in lines:
-                print(ut.eq(line))
+            print('No lines detected by Hough transform in', imagefile, ' :(')
 
-        # Paint
-        if outputfile is not None:
-            for line in lines:
-                rho, theta = line
-                a = np.cos(theta)
-                b = np.sin(theta)
-                x0 = a * rho
-                y0 = b * rho
-                x1 = int(x0 + 10000 * (-b))
-                y1 = int(y0 + 10000 * (a))
-                x2 = int(x0 - 10000 * (-b))
-                y2 = int(y0 - 10000 * (a))
+    # Unpack lists of single elements
+    lines = [l for [l] in lines]
 
-                cv.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    # Normalize
+    if normalize:
+        lines = [ut.normalize(l) for l in lines]
 
-            # Write copy of image to separate file for visualization
-            cv.imwrite(outputfile, img)
+    # Filter
+    if filterPredicate is not None:
+        lines = list(filter(filterPredicate, lines))
 
-        line_count = len(lines)
-        if line_count < 2:
-            print('WARNING: number of lines is merely',
-                  line_count, 'in image file', imagefile)
+    # Center or nub
+    if center:
+        lines = findCenters(lines)
+    elif nubPredicate is not None:
+        lines = nubBy(nubPredicate, lines)
+
+    # Log
+    if verbose:
+        for line in lines:
+            print(ut.eq(line))
+
+    # Paint
+    if outputfile is not None:
+        for line in lines:
+            rho, theta = line
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            x1 = int(x0 + 10000 * (-b))
+            y1 = int(y0 + 10000 * (a))
+            x2 = int(x0 - 10000 * (-b))
+            y2 = int(y0 - 10000 * (a))
+
+            cv.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+        # Write copy of image to separate file for visualization
+        cv.imwrite(outputfile, img)
+
+    line_count = len(lines)
+    if line_count < 2:
+        print('WARNING: number of lines is merely',
+                line_count, 'in image file', imagefile)
 
     if verbose:
         print('Applied Hough transform on', imagefile,
