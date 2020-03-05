@@ -3,7 +3,7 @@
 BASE=data/processed/dec19/kalkar1/thermal
 
 # Note that you can use
-# for l in $(ls */*/log.txt);do echo $l,$(cat $l|grep "merely 0"|wc -l),$(cat $l|grep "merely 1"|wc -l),$(cat $l|grep "multiple" | wc -l);done
+# for l in $(ls */*/log.txt);do echo $l,$(cat $l|grep "merely 0"|wc -l),$(cat $l|grep "merely 1"|wc -l),$(cat $l|grep "multiple"|wc -l);done
 # in order to accumulate the results into a csv file (filename,zero,one,multiple) when the WD is in $BASE/eval/hough
 
 for threshold in {50..250..10}; do
