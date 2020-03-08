@@ -20,7 +20,7 @@ def fst(x): return x[0]
 def snd(x): return x[1]
 
 
-def stitch(method, imagedir, image_height, cachefile, l1radius=50, output=None):
+def stitch(method, imagedir, image_height, cachefile, l1radius=50, reverse_rotation=False, output=None):
 
     print('Reading Hough lines')
     df = pd.read_csv(cachefile)
@@ -87,10 +87,15 @@ def stitch(method, imagedir, image_height, cachefile, l1radius=50, output=None):
                 c_b = ut.get_bisecting_line(c_l, c_r)
                 n_b = ut.get_bisecting_line(n_l, n_r)
 
+                # We might need the original lines later on
+                c_b_backup, n_b_backup = c_b, n_b
+
                 # Move this distance to align bisec foot points
                 x_diff_b, y_diff_b = x(n_b) - x(c_b), y(n_b) - y(c_b)
 
-                # Use these two variables to track the overall vertical translation for each side
+                # Use these four variables to track the overall vertical translation for each side
+                translate_x_l = x_diff_b
+                translate_x_r = x_diff_b
                 translate_y_l = y_diff_b
                 translate_y_r = y_diff_b
 
@@ -102,10 +107,6 @@ def stitch(method, imagedir, image_height, cachefile, l1radius=50, output=None):
                 # Foot points should now be "equal" (deviate less than 1 pixel) for the bisecting lines
                 bft_x, bft_y = x(n_b), y(n_b)  # = x(c_b), y(c_b)
 
-                # Note how we never account for the following rotation
-                # in the final translation values, see stitchrelative.py
-                # for a script that does this (and produces worse results!)
-
                 # Rotate current lines and next lines
                 # such that the bisection lines are both vertical
                 c_rotate, n_rotate = -t(c_b), -t(n_b)
@@ -116,17 +117,54 @@ def stitch(method, imagedir, image_height, cachefile, l1radius=50, output=None):
                 n_b = ut.rotate(n_b, n_rotate, bft_x, bft_y)
                 n_r = ut.rotate(n_r, n_rotate, bft_x, bft_y)
 
-                # Compute how far the current lines
-                # need to be translated in vertical direction
-                # to match the next lines
-                translate_y_l += ut.vertical_distance(n_l, c_l)
-                translate_y_r += ut.vertical_distance(n_r, c_r)
+                if reverse_rotation:
+                    # Compute how far both current lines
+                    # need to be translated in vertical direction
+                    # to match both next lines
+                    translate_l = ut.vertical_distance(n_l, c_l)
+                    translate_r = ut.vertical_distance(n_r, c_r)
 
-                # The only time we translated horizontally was in the beginning, so we just copy that value
-                translate_x = x_diff_b
-                # Take the average over both translation for left and right
-                translate_y = 0.5 * (translate_y_l + translate_y_r)
+                    # As we rotated the lines earlier,
+                    # vertical actually refers to parallel to the bisections,
+                    # so we need to take them into account
+                    # (We use the bisection of the bisections as a simplifying assumption)
+                    vertical_direction = t(ut.get_bisecting_line(c_b_backup,
+                                                                 n_b_backup))
 
+                    # Distribute vertical translations among both axes according to bisection of bisections
+                    # (Note how we swapped sin and cos to account for the pi/2 angle of difference)
+                    translate_x_l += translate_l * np.sin(vertical_direction)
+                    translate_x_r += translate_r * np.sin(vertical_direction)
+                    translate_y_l += translate_l * np.cos(vertical_direction)
+                    translate_y_r += translate_r * np.cos(vertical_direction)
+
+                    print(vertical_direction, '|',
+                          translate_l * np.sin(vertical_direction),
+                          translate_r * np.sin(vertical_direction),
+                          translate_l * np.cos(vertical_direction),
+                          translate_r * np.cos(vertical_direction),
+                          'vs otherwise',
+                          ut.vertical_distance(n_l, c_l),
+                          ut.vertical_distance(n_r, c_r))
+
+                    # Take the average over both translation for left and right
+                    translate_x = (translate_x_l + translate_x_r) / 2
+                    translate_y = (translate_y_l + translate_y_r) / 2
+                else:
+                    # We do not take into account that we rotated our lines earlier because experiments show that this produces worse results.
+
+                    # Compute how far the current lines
+                    # need to be translated in vertical direction
+                    # to match the next lines
+                    translate_y_l += ut.vertical_distance(n_l, c_l)
+                    translate_y_r += ut.vertical_distance(n_r, c_r)
+
+                    # The only time we translated horizontally was in the beginning, so we just copy that value
+                    translate_x = translate_x_l  # = translate_x_r
+                    # Take the average over both translation for left and right
+                    translate_y = 0.5 * (translate_y_l + translate_y_r)
+
+                # Store our translation results for the twin combination
                 image_translations.append([translate_x, translate_y])
 
             if len(image_translations) > 0:
@@ -292,11 +330,13 @@ if __name__ == '__main__':
                         help='Image height')
     parser.add_argument('-l', '--local-optimization', type=int, default=20,
                         help='Maximum L1 radius of local optimization')
+    parser.add_argument('--reverse-rotation', action='store_true',
+                        help='DISCOURAGED. Distribute vertical distance among both axes according to the previous rotation')
     parser.add_argument('-o', '--output',
                         help='Output file')
 
     args = parser.parse_args()
 
     stitch(args.method, args.input, args.height, args.hough,
-           l1radius=args.local_optimization,
+           l1radius=args.local_optimization, reverse_rotation=args.reverse_rotation,
            output=args.output)
