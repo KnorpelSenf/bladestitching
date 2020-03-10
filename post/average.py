@@ -68,10 +68,7 @@ if __name__ == '__main__':
 
     if not args.output:
         filename, ext = os.path.splitext(args.translations)
-        args.output = os.path.join(
-            os.path.dirname(args.translations),
-            filename + '_averaged' + ext
-        )
-        print(args.output)
+        args.output = filename + '_averaged' + ext
 
     average(args.translations, args.output, args.window_size)
+    print('Done.', args.output)
