@@ -56,8 +56,8 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('translations', help='Input file')
-    parser.add_argument(
-        '-o', '--output', help='Output file')
+    parser.add_argument('-o', '--output',
+                        help='Output file')
     parser.add_argument('-s', '--window-size', default=5, type=int,
                         help='Size of sliding window used for averaging')
     parser.add_argument('-y', '--y-only', action='store_true',
@@ -67,9 +67,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not args.output:
+        filename, ext = os.path.splitext(args.translations)
         args.output = os.path.join(
             os.path.dirname(args.translations),
-            'translations_averaged.csv'
+            filename + '_averaged' + ext
         )
         print(args.output)
 
