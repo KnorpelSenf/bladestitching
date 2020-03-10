@@ -252,7 +252,7 @@ def vertical_distance(line0, line1):
     x0, y0 = x(line0), y(line0)
     x1, y1 = x(line1), y(line1)
 
-    # L1 distance between foot points
+    # L∞ distance between foot points
     dist_x = x0 - x1
     dist_y = y0 - y1
 

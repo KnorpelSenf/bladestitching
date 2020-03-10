@@ -20,7 +20,7 @@ def fst(x): return x[0]
 def snd(x): return x[1]
 
 
-def stitch(method, imagedir, image_height, cachefile, l1radius=50, reverse_rotation=False, output=None):
+def stitch(method, imagedir, image_height, cachefile, lInfRadius=50, reverse_rotation=False, output=None):
 
     print('Reading Hough lines')
     df = pd.read_csv(cachefile)
@@ -174,11 +174,11 @@ def stitch(method, imagedir, image_height, cachefile, l1radius=50, reverse_rotat
                     .mean(0)
                 ).astype(int)
 
-                if l1radius > 0:
+                if lInfRadius > 0:
                     # Optimize result based on error function
                     translation = optimize_line_distances(
                         line_pairs, translation, image_height,
-                        l1radius=l1radius
+                        lInfRadius=lInfRadius
                     )
             else:
                 translation = (0, 0)
@@ -211,7 +211,7 @@ def stitch(method, imagedir, image_height, cachefile, l1radius=50, reverse_rotat
         print('Result not written to disk as output file was not specified.')
 
 
-def optimize_line_distances(line_pairs, translation, image_height, l1radius=50):
+def optimize_line_distances(line_pairs, translation, image_height, lInfRadius=50):
     tx, ty = translation
 
     # move origin of lines
@@ -223,8 +223,8 @@ def optimize_line_distances(line_pairs, translation, image_height, l1radius=50):
 
     # create surrounding area around target translation value
     attempts = [(x, y)
-                for x in range(tx - l1radius, tx + l1radius + 1)
-                for y in range(ty - l1radius, ty + l1radius + 1)]
+                for x in range(tx - lInfRadius, tx + lInfRadius + 1)
+                for y in range(ty - lInfRadius, ty + lInfRadius + 1)]
 
     errors = [(translation,
                compute_error(line_pairs, translation, image_height))
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     parser.add_argument('height', type=int,
                         help='Image height')
     parser.add_argument('-l', '--local-optimization', type=int, default=20,
-                        help='Maximum L1 radius of local optimization')
+                        help='Maximum L∞ radius of local optimization')
     parser.add_argument('--reverse-rotation', action='store_true',
                         help='DISCOURAGED. Distribute vertical distance among both axes according to the previous rotation')
     parser.add_argument('-o', '--output',
@@ -338,5 +338,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     stitch(args.method, args.input, args.height, args.hough,
-           l1radius=args.local_optimization, reverse_rotation=args.reverse_rotation,
+           lInfRadius=args.local_optimization, reverse_rotation=args.reverse_rotation,
            output=args.output)

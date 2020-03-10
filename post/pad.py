@@ -19,7 +19,7 @@ def pad(imagedir, translations, output, reference):
 
     if(len(df.index) > len(files)):
         print(len(df.index), 'files supplied, only',
-              len(files), 'have reasonable values (< 800px L1-translation):')
+              len(files), 'have reasonable values (< 800px L∞-translation):')
         print(files)
 
     for file in tqdm(files):
