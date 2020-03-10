@@ -138,15 +138,6 @@ def stitch(method, imagedir, image_height, cachefile, lInfRadius=50, reverse_rot
                     translate_y_l += translate_l * np.cos(vertical_direction)
                     translate_y_r += translate_r * np.cos(vertical_direction)
 
-                    print(vertical_direction, '|',
-                          translate_l * np.sin(vertical_direction),
-                          translate_r * np.sin(vertical_direction),
-                          translate_l * np.cos(vertical_direction),
-                          translate_r * np.cos(vertical_direction),
-                          'vs otherwise',
-                          ut.vertical_distance(n_l, c_l),
-                          ut.vertical_distance(n_r, c_r))
-
                     # Take the average over both translation for left and right
                     translate_x = (translate_x_l + translate_x_r) / 2
                     translate_y = (translate_y_l + translate_y_r) / 2
