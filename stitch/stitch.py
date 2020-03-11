@@ -181,7 +181,7 @@ def stitch(method, imagedir, image_height, cachefile, lInfRadius=50, reverse_rot
                 lambda t: compute_error(line_pairs, t, image_height),
                 (0, 0)
             )
-            translation = tuple(map(int, res.x))
+            translation = tuple(map(int, map(round, res.x)))
 
         # store reference image and translation value in result dict
         key = os.path.basename(current_image.img_path)
