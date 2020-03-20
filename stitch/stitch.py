@@ -320,7 +320,7 @@ if __name__ == '__main__':
     parser.add_argument('height', type=int,
                         help='Image height')
     parser.add_argument('-l', '--local-optimization', type=int, default=20,
-                        help='Maximum L∞ radius of local optimization')
+                        help='Maximum L∞ radius of local optimization (regarded iff method=analytical)')
     parser.add_argument('--reverse-rotation', action='store_true',
                         help='DISCOURAGED. Distribute vertical distance among both axes according to the previous rotation')
     parser.add_argument('-o', '--output',
