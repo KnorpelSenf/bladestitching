@@ -22,9 +22,10 @@ Note that feature detection has been found to fail on the given data as the numb
 1) **Hough stitching.**
 This package also contains a utility module named `lineutils.py` that provides basic geometric operations to other scripts in the same directory. All other files take again an image or a directory of images as input.
 They're supposed to work on the output of the preprocessing scripts.
-    * Apply a Hough transformation and store the resulting linear equations (polar coordinates) in a CSV file, non-injectively keyed by file names
+    * Apply a Hough transformation and store the resulting linear equations (polar coordinates) in a CSV file, ambiguously keyed by file names
     * Use a CSV file of linear equations to compute a basic stitching result, thus outputting a list of pixel-wise translations per file name
-    * The same thing with a little optimization that is well justified but deteriorating the results
+    * The same thing with a little optimization that is well justified but deteriorating the results, same script as the regular stitching but with program arguemtn
+    * Iterative stitching (again usable via program argument)
     * “Intelligently” color the background of an image based on Hough lines, outputting an image containing all black but the rotor blade (or any other color, if specified)
 1) **Postprocessing.**
 A few helper scripts that achieve the following.
@@ -45,23 +46,24 @@ Please feel encouraged to grab a pencil and a sheet of paper if you wish to foll
 
 ## Installation
 
-Clone the repo, e. g. using SSH, and execute:
+Clone the repo, e.g. using SSH, and execute:
 
 ```bash
-git clone git@git.zs.informatik.uni-kiel.de:stu204766/bladestitching.git
-virtualenv venv && venv/bin/activate
+git clone git@github.com:KnorpelSenf/bladestitching.git
+virtualenv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## Directory structure
 
-| Directory   | What's in there                         |
-|-------------|-----------------------------------------|
-| `pre`       | Preprocessing scripts                   |
-| `stitch`    | Hough line based stitching              |
-| `post`      | Postprocessing scripts                  |
-| `unused`    | Feature detection and template matching |
-| `visualize` | Visualization                           |
+| Directory   | What's in there                                                                      |
+|-------------|--------------------------------------------------------------------------------------|
+| `pre`       | Preprocessing scripts                                                                |
+| `stitch`    | Hough line based stitching                                                           |
+| `post`      | Postprocessing scripts                                                               |
+| `unused`    | Feature detection and template matching                                              |
+| `visualize` | Visualization                                                                        |
+| `eval`      | A few scripts (bash and python) to perform grid searches and aggregate their results |
 
 For all python scripts mentioned in the following sections you can get detailed usage instructions by supplying `--help`.
 
@@ -95,7 +97,7 @@ All following scripts behave similarly.
 
 ### Sampling images from videos
 
-Choose your fps rate and supply it to `pre/imgseries.py`. Default is 1/2.
+Choose your fps rate and supply it to `pre/imgseries.py`. Default is 1/2 (used in thesis: 15).
 
 ### Cropping images
 
