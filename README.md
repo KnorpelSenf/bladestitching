@@ -24,7 +24,7 @@ This package also contains a utility module named `lineutils.py` that provides b
 They're supposed to work on the output of the preprocessing scripts.
     * Apply a Hough transformation and store the resulting linear equations (polar coordinates) in a CSV file, ambiguously keyed by file names
     * Use a CSV file of linear equations to compute a basic stitching result, thus outputting a list of pixel-wise translations per file name
-    * The same thing with a little optimization that is well justified but deteriorating the results, same script as the regular stitching but with program arguemtn
+    * The same thing with a little optimization that is well justified but deteriorating the results, same script as the regular stitching but used with program argument
     * Iterative stitching (again usable via program argument)
     * “Intelligently” color the background of an image based on Hough lines, outputting an image containing all black but the rotor blade (or any other color, if specified)
 1) **Postprocessing.**
