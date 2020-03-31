@@ -1,6 +1,8 @@
 # Blade Stitching
 
 Source code and more for Steffen Trog's bachelor thesis.
+If you were looking for this repo, you know what it's all about.
+In case you just stumbled upon it: Performing panoramic image stitching of thermographic video footage in order to compute full-width pictures of rotor blades of wind engines, thus enabling an affordable inspection method.
 
 ## About
 
@@ -113,3 +115,16 @@ Confer the above description to find out about what inputs a scripts relies on a
 In general, all inputs are mandatory arguments, while a possible output needs to be specified explicitely with the `-o` flag.
 Kindly supply `--help` to get a detailed description of the available arguments per script.
 Also, don't hesitate to read the arg parsing as it is straightforward.
+
+## Complete pipeline
+
+In the corresponding thesis to this repository, the following steps were shown to work well.
+Recall that these results are based on a small dataset and most likely will not generalize seemlessly to further recordings.
+
+```bash
+./pre/trim.py <input video> -s <start number of seconds> -e <end number of seconds> -o <output video>
+./pre/imseries.py <trimmed input file> --fps <number of fps> -o <output data directory>
+./stitch/hough.py <input data directory> -t <Hough transform threshold> -d 0.3 --max-workers <number of threads to use> -o <output csv>
+./stitch/stitch.py iterative <Hough input csv> <image height> -o <output csv>
+./post/merge.py <stitch input csv> <input data directory> <output panorama>
+```
