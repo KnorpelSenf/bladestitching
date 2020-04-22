@@ -125,6 +125,6 @@ Recall that these results are based on a small dataset and most likely will not 
 ./pre/trim.py <input video> -s <start number of seconds> -e <end number of seconds> -o <output video>
 ./pre/imseries.py <trimmed input file> --fps <number of fps> -o <output data directory>
 ./stitch/hough.py <input data directory> -t <Hough transform threshold> -d 0.3 --max-workers <number of threads to use> -o <output csv>
-./stitch/stitch.py iterative <Hough input csv> <image height> -o <output csv>
+./stitch/stitch.py iterative <Hough input csv> <input data directory> <image height> -o <output csv>
 ./post/merge.py <stitch input csv> <input data directory> <output panorama>
 ```
