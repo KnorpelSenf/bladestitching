@@ -1,7 +1,7 @@
 ffmpeg-python
 matplotlib
 opencv-python
-opencv-contrib-python==3.3.0.10
+opencv-contrib-python==4.2.0.32
 pandas
 seaborn
 scipy
